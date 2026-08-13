@@ -21,7 +21,7 @@ const BUSINESS_HOURS = [
 
 export default function BookingPage() {
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-12 sm:py-16">
+    <div className="min-h-screen bg-slate-50 px-4 py-12 sm:py-16">
       <div className="mx-auto max-w-5xl">
         <div className="mb-10 text-center sm:mb-12">
           <span className="text-xs font-medium uppercase tracking-wide text-teal-700">
@@ -68,6 +68,6 @@ export default function BookingPage() {
           <BookingForm />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

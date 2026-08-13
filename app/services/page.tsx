@@ -3,7 +3,7 @@ import { ServiceCard } from '@/app/components/ServiceCard';
 
 export default function ServicesPage() {
   return (
-    <main className="flex flex-1 flex-col items-center px-6 py-16 md:px-12">
+    <div className="flex flex-1 flex-col items-center px-6 py-16 md:px-12">
       <div className="max-w-2xl text-center">
         <h1 className="font-display text-4xl font-bold uppercase tracking-tighter md:text-5xl">
           Layanan Kami
@@ -18,6 +18,6 @@ export default function ServicesPage() {
           <ServiceCard key={service.slug} service={service} />
         ))}
       </div>
-    </main>
+    </div>
   );
 }

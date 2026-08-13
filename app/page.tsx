@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import Footer from './components/Footer';
 import ChatBot from './components/ChatBot';
 
 export const metadata: Metadata = {
@@ -49,10 +48,10 @@ const SERVICES = [
 
 export default function Home() {
   return (
-    <main className="bg-slate-100">
+    <div className="bg-slate-100">
       {/* Hero */}
       <section className="px-4 py-20 sm:py-28">
-        <div className="mx-auto max-w-3xl text-center">
+        <div className="mx-auto max-w-7xl text-center">
           <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700">
             <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
             Slot booking hari ini masih tersedia
@@ -123,7 +122,7 @@ export default function Home() {
 
       {/* CTA Banner */}
       <section className="px-4 py-16">
-        <div className="mx-auto max-w-3xl rounded-2xl bg-navy-900 px-6 py-10 text-center">
+        <div className="mx-auto max-w-6xl rounded-2xl bg-navy-900 px-6 py-10 text-center">
           <h2 className="text-xl font-bold text-white sm:text-2xl">
             Masih Ragu? Konsultasi Awal Gratis.
           </h2>
@@ -139,11 +138,6 @@ export default function Home() {
         </div>
       </section>
 
-      <div id="chatbot">
-        <ChatBot />
-      </div>
-
-      <Footer />
-    </main>
+    </div>
   );
 }

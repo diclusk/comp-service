@@ -15,7 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "FIXKOM_",
+  title: "Servis Komputer & Laptop — Booking Online, Chat AI Diagnosa Cepat",
   description: "Servis komputer & laptop untuk mahasiswa. Booking online, chat AI diagnosa cepat.",
 };
 

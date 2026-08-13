@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@config "../tailwind.config.js";
 
 /* ============================================================
    DESIGN TOKENS — dibutuhkan oleh komponen (jangan dihapus
@@ -14,26 +15,15 @@
   --font-display: "Clash Display", "Work Sans", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Work Sans", ui-sans-serif, system-ui, sans-serif;
 
-  --shadow-brutal: 6px 6px 0 0 #000;
-  --shadow-brutal-sm: 4px 4px 0 0 #000;
-  --shadow-brutal-lg: 10px 10px 0 0 #000;
-  --shadow-brutal-volt: 6px 6px 0 0 #ccff00;
-  --shadow-brutal-cyber: 6px 6px 0 0 #00e5ff;
 }
 
 /* Utility class yang dipakai komponen (btn-brutal, input-brutal). */
 @layer components {
-  .btn-brutal {
-    @apply inline-flex items-center justify-center gap-2 border-2 border-black font-mono text-sm font-bold uppercase tracking-[0.15em] px-6 py-3 shadow-brutal transition-[transform,box-shadow] duration-150 hover:translate-x-1 hover:translate-y-1 hover:shadow-brutal-sm;
-  }
-
-  .input-brutal {
-    @apply w-full border-2 border-black bg-white px-4 py-3 font-mono text-sm outline-none transition-[border-color,box-shadow] duration-150 focus:shadow-brutal-sm;
-  }
+  
 }
 
 body {
-  font-family: Arial, Helvetica, sans-serif;
+  
 }
 
 
@@ -41,11 +31,8 @@ body {
 :root {
   --bg: #EEF0F3;
   --ink: #14213D;
-  --muted: #4A5568;
   --accent: #FF8C42;
   --status: #2ECC71;
-  --surface: #FFFFFF;
-  --border: #D8DCE3;
 }
 
 body {
@@ -54,6 +41,3 @@ body {
   font-family: 'Inter', sans-serif;
 }
 
-.font-mono-tag {
-  font-family: 'Space Mono', monospace;
-}
