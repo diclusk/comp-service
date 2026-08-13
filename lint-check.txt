@@ -1,0 +1,5 @@
+
+> computer-services@0.1.0 lint
+> eslint
+
+LINT_DONE exit=0
