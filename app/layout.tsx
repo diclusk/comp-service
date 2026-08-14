@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Navbar from "./components/Navbar";
@@ -16,7 +17,16 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: "Servis Komputer & Laptop — Booking Online, Chat AI Diagnosa Cepat",
-  description: "Servis komputer & laptop untuk mahasiswa. Booking online, chat AI diagnosa cepat.",
+  description: "Servis komputer & laptop. Booking online, chat AI diagnosa cepat.",
+  icons: {
+    icon: "/favicon.png",
+  },
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 0.7,
 };
 
 export default function RootLayout({

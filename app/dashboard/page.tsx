@@ -22,11 +22,16 @@ export default async function DashboardPage() {
   const stats = await getLeadStats();
 
   return (
-    <main className="min-h-screen bg-slate-100 px-4 py-10">
+    <div className="min-h-screen bg-slate-100 px-4 py-10">
       <div className="mx-auto max-w-6xl">
-        <Link href="/" className="text-xs font-medium text-navy-400 hover:text-navy-600">
-          ← Kembali ke Beranda
-        </Link>
+        <div className="flex items-center justify-between">
+          <Link href="/" className="text-xs font-medium text-navy-400 hover:text-navy-600">
+            ← Kembali ke Beranda
+          </Link>
+          <a href="/api/admin/logout" className="text-xs font-medium text-navy-400 hover:text-navy-600">
+            Logout →
+          </a>
+        </div>
         <h1 className="mt-1 text-2xl font-bold text-navy-900">Dashboard Leads</h1>
         <p className="mt-1 text-sm text-navy-600">
           Pantau leads yang masuk dari chatbot & booking.
@@ -51,6 +56,6 @@ export default async function DashboardPage() {
           <LeadDashboard />
         </div>
       </div>
-    </main>
+    </div>
   );
 }

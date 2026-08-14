@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
     const { data: customer, error: customerError } = await supabase
       .from('customers')
       .upsert(
-        { name, phone, email: email || null },
+        { name, phone, email },
         { onConflict: 'phone' }
       )
       .select()

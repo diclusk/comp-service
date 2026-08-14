@@ -5,7 +5,7 @@ import { useState, FormEvent } from 'react';
 type DeviceType = 'Laptop' | 'PC Desktop' | 'Printer' | 'Lainnya';
 type ServiceType =
   | 'Perbaikan Hardware'
-  | 'Instalasi Software'
+  | 'Instalasi OS & Software'
   | 'Upgrade Komponen'
   | 'Pembersihan & Maintenance'
   | 'Recovery Data'
@@ -26,7 +26,7 @@ type SubmitStatus = 'idle' | 'submitting' | 'success' | 'error';
 const DEVICE_TYPES: DeviceType[] = ['Laptop', 'PC Desktop', 'Printer', 'Lainnya'];
 const SERVICE_TYPES: ServiceType[] = [
   'Perbaikan Hardware',
-  'Instalasi Software',
+  'Instalasi OS & Software',
   'Upgrade Komponen',
   'Pembersihan & Maintenance',
   'Recovery Data',
@@ -81,21 +81,20 @@ export default function BookingForm() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          customer: {
-            name: form.name,
-            phone: form.phone,
-            email: form.email,
-            device_type: form.deviceType,
-          },
-          booking: {
-            service_type: form.serviceType,
-            description: form.description,
-            scheduled_date: form.scheduledDate,
-          },
+          name: form.name,
+          phone: form.phone,
+          email: form.email,
+          device_type: form.deviceType,
+          service_type: form.serviceType,
+          description: form.description,
+          scheduled_date: form.scheduledDate,
         }),
       });
  
-      if (!res.ok) throw new Error('Gagal mengirim booking, coba lagi');
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => null);
+        throw new Error(errBody?.error || 'Gagal mengirim booking, coba lagi');
+      }
  
       setStatus('success');
       setForm(initialForm);
@@ -109,8 +108,7 @@ export default function BookingForm() {
     'w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-navy-900 placeholder:text-navy-400 focus:outline-none focus:ring-2 focus:ring-navy-600 focus:border-navy-600 transition';
  
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-10">
-      <div className="mx-auto max-w-xl">
+    <div>
         <div className="mb-6">
           <p className="text-xs font-semibold uppercase tracking-wider text-navy-400">
             Layanan Servis Komputer
@@ -273,7 +271,6 @@ export default function BookingForm() {
             </button>
           </form>
         )}
-      </div>
     </div>
   );
 }
