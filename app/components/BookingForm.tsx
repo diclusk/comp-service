@@ -1,6 +1,9 @@
 'use client';
  
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
+import Link from 'next/link';
+import { getOrCreateGuestSessionId } from '@/lib/Guestsession';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
  
 type DeviceType = 'Laptop' | 'PC Desktop' | 'Printer' | 'Lainnya';
 type ServiceType =
@@ -48,6 +51,14 @@ export default function BookingForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof BookingFormData, string>>>({});
   const [status, setStatus] = useState<SubmitStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    getSupabaseBrowser()
+      .auth.getUser()
+      .then(({ data }) => setIsLoggedIn(!!data.user))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
  
   function update<K extends keyof BookingFormData>(key: K, value: BookingFormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -88,6 +99,9 @@ export default function BookingForm() {
           service_type: form.serviceType,
           description: form.description,
           scheduled_date: form.scheduledDate,
+          // Dipakai server HANYA kalau request ini anonymous (belum login).
+          // Kalau user sedang login, server pakai user_id dari session, ini diabaikan.
+          guest_session_id: getOrCreateGuestSessionId(),
         }),
       });
  
@@ -110,11 +124,11 @@ export default function BookingForm() {
   return (
     <div>
         <div className="mb-6">
-          <p className="text-xs font-semibold uppercase tracking-wider text-navy-400">
+          <p className="text-xs font-semibold uppercase tracking-wider text-amber-50">
             Layanan Servis Komputer
           </p>
-          <h1 className="mt-1 text-2xl font-bold text-navy-900">Booking Servis</h1>
-          <p className="mt-1 text-sm text-navy-600">
+          <h1 className="mt-1 text-2xl font-bold text-amber-50">Booking Servis</h1>
+          <p className="mt-1 text-sm text-amber-300">
             Isi data di bawah, tim kami akan menghubungi untuk konfirmasi jadwal.
           </p>
         </div>
@@ -142,14 +156,28 @@ export default function BookingForm() {
           <form
             onSubmit={handleSubmit}
             noValidate
-            className="space-y-6 rounded-xl border border-slate-200 bg-white p-6"
+            className="rounded-2xl
+                border border-white/8
+              bg-[#0B1629]
+                p-6
+
+                shadow-[0_12px_35px_rgba(0,0,0,0.30)]
+                ring-1 ring-inset ring-white/2.5
+
+                transition-all duration-300
+                hover:-translate-y-0.5
+              hover:border-white/12
+                hover:shadow-[0_16px_40px_rgba(0,0,0,0.38)]
+                before:pointer-events-none
+                before:absolute before:inset-0
+                before:rounded-2xl"
           >
             {/* Data Pelanggan */}
             <fieldset className="space-y-4">
-              <legend className="text-sm font-semibold text-navy-900">Data Pelanggan</legend>
+              <legend className="text-sm font-semibold text-amber-50">Data Pelanggan</legend>
  
               <div>
-                <label className="mb-1 block text-xs font-medium text-navy-600">
+                <label className="mb-1 block text-xs font-medium text-amber-100">
                   Nama Lengkap
                 </label>
                 <input
@@ -163,7 +191,7 @@ export default function BookingForm() {
  
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-navy-600">
+                  <label className="mb-1 block text-xs font-medium text-amber-100">
                     No. Telepon
                   </label>
                   <input
@@ -175,7 +203,7 @@ export default function BookingForm() {
                   {errors.phone && <p className="mt-1 text-xs text-red-600">{errors.phone}</p>}
                 </div>
                 <div>
-                  <label className="mb-1 block text-xs font-medium text-navy-600">Email</label>
+                  <label className="mb-1 block text-xs font-medium text-amber-100">Email</label>
                   <input
                     className={inputBase}
                     value={form.email}
@@ -187,7 +215,7 @@ export default function BookingForm() {
               </div>
  
               <div>
-                <label className="mb-1 block text-xs font-medium text-navy-600">
+                <label className="mb-1 block text-xs font-medium text-amber-100">
                   Jenis Perangkat
                 </label>
                 <select
@@ -205,11 +233,11 @@ export default function BookingForm() {
             </fieldset>
  
             {/* Detail Booking */}
-            <fieldset className="space-y-4 border-t border-slate-100 pt-4">
-              <legend className="text-sm font-semibold text-navy-900">Detail Booking</legend>
+            <fieldset className="space-y-1 mt-8 border-t border-slate-100 pt-4">
+              <legend className="text-sm font-semibold text-amber-50">Detail Booking</legend>
  
               <div>
-                <label className="mb-1 block text-xs font-medium text-navy-600">
+                <label className="mb-2 block text-xs font-medium text-amber-100">
                   Jenis Layanan
                 </label>
                 <select
@@ -226,7 +254,7 @@ export default function BookingForm() {
               </div>
  
               <div>
-                <label className="mb-1 block text-xs font-medium text-navy-600">
+                <label className="mb-2 mt-2.5 block text-xs font-medium text-amber-100">
                   Deskripsi Keluhan
                 </label>
                 <textarea
@@ -241,7 +269,7 @@ export default function BookingForm() {
               </div>
  
               <div>
-                <label className="mb-1 block text-xs font-medium text-navy-600">
+                <label className="mb-1 block text-xs font-medium text-amber-100">
                   Tanggal Booking
                 </label>
                 <input

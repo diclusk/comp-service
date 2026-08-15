@@ -47,16 +47,17 @@ const SERVICES = [
 
 export default function Home() {
   return (
-    <div className="bg-slate-100">
+    
+    <div className="bg-bg color-ink">
       {/* Hero */}
-      <section className="relative min-h-screen flex flex-col items-center justify-start px-8 pt-65">
+      <section className="relative min-h-screen flex flex-col items-center justify-start px-8 pt-55">
         <div className="mx-auto max-w-7xl text-center">
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-50 px-6 py-1 text-xs font-medium text-amber-700">
-            <span className="h-1.5 w-1.5 rounded-full bg-amber-500" />
+          <span className="inline-flex items-center gap-1.5 rounded-full px-6 py-1 text-xs font-medium text-amber-50 ring-1 ring-amber-500/30">
+            <span className="h-1.5 w-1.5 square-full rotate-45 bg-amber-200" />
             Slot booking hari ini masih tersedia
           </span>
 
-          <h1 className="mt-8 text-6xl font-bold text-navy-900 sm:text-6xl">
+          <h1 className="mt-8 text-6xl font-bold text-amber-50 sm:text-6xl">
             Komputer atau Laptop Bermasalah?
             <br className="hidden sm:block" /> Booking Servis dalam 2 Menit.
           </h1>
@@ -74,7 +75,7 @@ export default function Home() {
               Booking Servis Sekarang
             </Link>
             <a
-              href="#chatbot"
+              href="chatbot"
               className="rounded-lg border border-slate-300 bg-white px-6 py-3 text-sm font-medium text-navy-900 transition hover:border-navy-400"
             >
               Tanya AI Dulu
@@ -96,7 +97,7 @@ export default function Home() {
       </section>
 
       {/* Layanan */}
-      <section className="bg-white px-6 py-16">
+      <section className="bg-bg px-6 py-16">
         <div className="mx-auto max-w-7xl">
           <div className="mb-8 text-center">
             <p className="text-xs font-semibold uppercase tracking-wider text-navy-400">

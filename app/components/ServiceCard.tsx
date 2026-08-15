@@ -39,7 +39,7 @@ export function ServiceCard({ service }: { service: Service }) {
         <IconComponent size={24} weight="bold" />
       </div>
 
-      <h3 className="mt-4 text-lg font-semibold text-ink">{service.name}</h3>
+      <h3 className="mt-4 text-lg font-semibold text-white">{service.name}</h3>
       <p className="mt-1 text-sm text-muted">{service.tagline}</p>
 
       <ul className="mt-4 space-y-1.5">
@@ -54,11 +54,11 @@ export function ServiceCard({ service }: { service: Service }) {
       <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
         <div>
           <p className="text-xs text-muted">Mulai dari</p>
-          <p className="text-base font-bold text-ink">{service.price}</p>
+          <p className="text-base font-bold text-white">{service.price}</p>
         </div>
         <div className="text-right">
           <p className="text-xs text-muted">Estimasi</p>
-          <p className="text-sm font-medium text-ink">{service.duration}</p>
+          <p className="text-sm font-medium text-amber-200">{service.duration}</p>
         </div>
       </div>
     </div>

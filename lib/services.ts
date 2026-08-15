@@ -8,7 +8,7 @@ export const services: Service[] = [
     price: 'Rp 150.000 – Rp 500.000+',
     duration: '1-3 hari',
     icon: 'Wrench',
-    accent: 'volt',
+    accent: 'punch',
     points: ['Diagnosa gratis sebelum eksekusi', 'Sparepart original & KW berkualitas', 'Garansi servis 30 hari'],
   },
   {
@@ -18,7 +18,7 @@ export const services: Service[] = [
     price: 'Rp 75.000 – Rp 150.000',
     duration: '2-4 jam',
     icon: 'DownloadSimple',
-    accent: 'cyber',
+    accent: 'punch',
     points: ['Windows / Linux / dual-boot', 'Software standar kuliah terpasang', 'Data aman, backup dulu'],
   },
   {
@@ -38,7 +38,7 @@ export const services: Service[] = [
     price: 'Rp 100.000 – Rp 250.000',
     duration: '1-2 jam',
     icon: 'Lightning',
-    accent: 'volt',
+    accent: 'punch',
     points: ['Konsultasi kompatibilitas gratis', 'Migrasi OS ke SSD tanpa install ulang', 'Garansi part & instalasi', 'Catatan: Harga ini hanya untuk jasa pemasangan, belum termasuk harga part.'],
   },
   {
@@ -48,7 +48,7 @@ export const services: Service[] = [
     price: 'Rp 125.000 – Rp 300.000',
     duration: '1-3 jam',
     icon: 'Fan',
-    accent: 'cyber',
+    accent: 'punch',
     points: ['Bongkar total, bersih sampai fan', 'Thermal paste premium', 'Suhu turun rata-rata 10-15°C', 'Harga tergantung tipe laptop & tingkat kekotoran, konsultasi dulu sebelum eksekusi.'],
   },
   {
