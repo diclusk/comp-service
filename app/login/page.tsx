@@ -3,6 +3,7 @@
 import { useState, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import BorderGlow from '@/app/components/BorderGlow';
 
 function LoginForm() {
   const router = useRouter();
@@ -41,12 +42,21 @@ function LoginForm() {
 
   return (
     <main className="min-h-screen bg-[#060a13] flex items-center justify-center px-4 py-24">
-      <div className="relative w-full max-w-md rounded-2xl p-0.5 overflow-hidden">
-        {/* rotating glow ring — bigger than the box so the sweep reads clearly, clipped by overflow-hidden */}
-        <div className="pointer-events-none absolute inset-[-60%] animate-spin-slow spin-ring" />
-
-        {/* card */}
-        <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 shadow-2xl shadow-black/40">
+      <div className="relative w-full max-w-md">
+        <BorderGlow
+          edgeSensitivity={40}
+          glowColor="14 184 166"
+          backgroundColor="#071225"
+          borderRadius={16}
+          glowRadius={20}
+          glowIntensity={0.8}
+          coneSpread={30}
+          animated={true}
+          fillOpacity={0.15}
+          className="p-[2px]"
+        >
+          {/* card */}
+          <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 shadow-2xl shadow-black/40">
           <h1 className="text-2xl font-bold text-white">Masuk</h1>
           <p className="mt-1 text-sm text-slate-400">
             Lihat riwayat booking servis kamu.
@@ -104,35 +114,9 @@ function LoginForm() {
               Daftar
             </Link>
           </p>
-        </div>
+          </div>
+        </BorderGlow>
       </div>
-
-      <style jsx>{`
-        .spin-ring {
-          background: conic-gradient(
-            from 0deg,
-            transparent 0deg,
-            #2dd4bf 60deg,
-            transparent 140deg,
-            transparent 260deg,
-            #22d3ee 340deg,
-            transparent 360deg
-          );
-        }
-        .animate-spin-slow {
-          animation: spin-slow 3.5s linear infinite;
-        }
-        @keyframes spin-slow {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-spin-slow {
-            animation: none;
-          }
-        }
-      `}</style>
     </main>
   );
 }

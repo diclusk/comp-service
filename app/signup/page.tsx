@@ -3,6 +3,7 @@
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import BorderGlow from '@/app/components/BorderGlow';
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -46,61 +47,56 @@ export default function RegisterPage() {
   if (needsConfirmation) {
     return (
       <main className="min-h-screen bg-[#060a13] flex items-center justify-center px-4 py-24">
-        <div className="relative w-full max-w-md rounded-2xl p-0.5 overflow-hidden">
-          <div className="pointer-events-none absolute inset-[-60%] animate-spin-slow spin-ring" />
-          <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 text-center shadow-2xl shadow-black/40">
-            <h1 className="text-2xl font-bold text-white">Cek email kamu</h1>
-            <p className="mt-2 text-sm text-slate-400">
-              Kami sudah kirim link konfirmasi ke{' '}
-              <span className="font-medium text-slate-200">{email}</span>. Klik link itu dulu
-              sebelum login.
-            </p>
-            <Link
-              href="/login"
-              className="mt-6 inline-block rounded-lg bg-teal-400 px-4 py-2.5 text-sm font-semibold text-[#06110f] transition hover:bg-teal-300"
-            >
-              Ke Halaman Login
-            </Link>
-          </div>
+        <div className="relative w-full max-w-md">
+          <BorderGlow
+            edgeSensitivity={40}
+            glowColor="14 184 166"
+            backgroundColor="#071225"
+            borderRadius={16}
+            glowRadius={20}
+            glowIntensity={0.8}
+            coneSpread={30}
+            animated={true}
+            fillOpacity={0.15}
+            className="p-[2px]"
+          >
+            <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 text-center shadow-2xl shadow-black/40">
+              <h1 className="text-2xl font-bold text-white">Cek email kamu</h1>
+              <p className="mt-2 text-sm text-slate-400">
+                Kami sudah kirim link konfirmasi ke{' '}
+                <span className="font-medium text-slate-200">{email}</span>. Klik link itu dulu
+                sebelum login.
+              </p>
+              <Link
+                href="/login"
+                className="mt-6 inline-block rounded-lg bg-teal-400 px-4 py-2.5 text-sm font-semibold text-[#06110f] transition hover:bg-teal-300"
+              >
+                Ke Halaman Login
+              </Link>
+            </div>
+          </BorderGlow>
         </div>
-        <style jsx>{`
-          .spin-ring {
-            background: conic-gradient(
-              from 0deg,
-              transparent 0deg,
-              #2dd4bf 60deg,
-              transparent 140deg,
-              transparent 260deg,
-              #22d3ee 340deg,
-              transparent 360deg
-            );
-          }
-          .animate-spin-slow {
-            animation: spin-slow 3.5s linear infinite;
-          }
-          @keyframes spin-slow {
-            to {
-              transform: rotate(360deg);
-            }
-          }
-          @media (prefers-reduced-motion: reduce) {
-            .animate-spin-slow {
-              animation: none;
-            }
-          }
-        `}</style>
       </main>
     );
   }
 
   return (
     <main className="min-h-screen bg-[#060a13] flex items-center justify-center px-4 py-24">
-      <div className="relative w-full max-w-md rounded-2xl p-0.5 overflow-hidden">
-        {/* rotating glow ring — bigger than the box so the sweep reads clearly, clipped by overflow-hidden */}
-        <div className="pointer-events-none absolute inset-[-60%] animate-spin-slow spin-ring" />
-
-        {/* card */}
-        <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 shadow-2xl shadow-black/40">
+      <div className="relative w-full max-w-md">
+        <BorderGlow
+          edgeSensitivity={40}
+          glowColor="14 184 166"
+          backgroundColor="#071225"
+          borderRadius={16}
+          glowRadius={20}
+          glowIntensity={0.8}
+          coneSpread={30}
+          animated={true}
+          fillOpacity={0.15}
+          className="p-[2px]"
+        >
+          {/* card */}
+          <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 shadow-2xl shadow-black/40">
           <h1 className="text-2xl font-bold text-white">Daftar Akun</h1>
           <p className="mt-1 text-sm text-slate-400">
             Riwayat booking kamu tersimpan selamanya selama akun masih ada.
@@ -161,34 +157,8 @@ export default function RegisterPage() {
             </Link>
           </p>
         </div>
-      </div>
-
-      <style jsx>{`
-        .spin-ring {
-          background: conic-gradient(
-            from 0deg,
-            transparent 0deg,
-            #2dd4bf 60deg,
-            transparent 140deg,
-            transparent 260deg,
-            #22d3ee 340deg,
-            transparent 360deg
-          );
-        }
-        .animate-spin-slow {
-          animation: spin-slow 3.5s linear infinite;
-        }
-        @keyframes spin-slow {
-          to {
-            transform: rotate(360deg);
-          }
-        }
-        @media (prefers-reduced-motion: reduce) {
-          .animate-spin-slow {
-            animation: none;
-          }
-        }
-      `}</style>
+          </BorderGlow>
+        </div>
     </main>
   );
 }
