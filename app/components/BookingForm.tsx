@@ -75,7 +75,7 @@ export default function BookingPage() {
 
   return (
     <div className="relative rounded-2xl p-0.5 [bg-gradient-to-b_from-[#0B1629]_to-[#060A13]] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_20px_45px_-15px_rgba(0,0,0,0.85)] scheme:dark">
-      <BorderBeam size={70} duration={7} colorFrom="#2dd4bf" colorTo="#22d3ee" borderWidth={2} ambientIntensity={0.14} />
+      <BorderBeam size={500} duration={8} colorFrom="#2dd4bf" colorTo="#22d3ee" borderWidth={2} ambientIntensity={0.14} />
 
       <form
         onSubmit={handleSubmit}
@@ -93,7 +93,7 @@ export default function BookingPage() {
             value={fullName}
             onChange={(e) => setFullName(e.target.value)}
             required
-            placeholder="cth. Budi Santoso"
+            placeholder="cth. Nick Hermawan"
             className={inputClass}
           />
         </div>

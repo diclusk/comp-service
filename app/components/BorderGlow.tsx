@@ -47,7 +47,7 @@ interface AnimateOpts {
   ease?: (t: number) => number; onUpdate: (v: number) => void; onEnd?: () => void;
 }
 
-function animateValue({ start = 0, end = 100, duration = 1000, delay = 0, ease = easeOutCubic, onUpdate, onEnd }: AnimateOpts) {
+function animateValue({ start = 0, end = 100, duration = 3000, delay = 0, ease = easeOutCubic, onUpdate, onEnd }: AnimateOpts) {
   const t0 = performance.now() + delay;
   function tick() {
     const elapsed = performance.now() - t0;

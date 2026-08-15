@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import BookingForm from '@/app/components/BookingForm';
+import { BorderBeam } from '@/app/components/border-beam';
 
 export const metadata: Metadata = {
   title: 'Booking Servis Komputer',
@@ -108,6 +109,7 @@ export default function BookingPage() {
               />
 
               <div className="flex items-center gap-3">
+                <BorderBeam size={100} duration={7} reverse={true} colorFrom="#2dd4bf" colorTo="#22d3ee" borderWidth={2} ambientIntensity={0.14} />
                 <h2 className="shrink-0 text-sm font-semibold text-white">
                   Kenapa servis di sini?
                 </h2>
@@ -160,6 +162,7 @@ export default function BookingPage() {
                 hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.08),0_24px_50px_-15px_rgba(0,0,0,0.85)]
               "
             >
+              <BorderBeam size={100} duration={7} reverse={true} colorFrom="#2dd4bf" colorTo="#22d3ee" borderWidth={2} ambientIntensity={0.14} />
               {/* Subtle top glow */}
               <div
                 className="

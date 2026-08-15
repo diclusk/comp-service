@@ -106,8 +106,8 @@ export default function HeroVisual() {
         className="bottom-4 left-2"
         delay={1.4}
         icon={IconClipboard}
-        title="Estimasi Transparan"
-        subtitle="Tanpa biaya siluman"
+        title="Harga Transparan"
+        subtitle="Jaminan tanpa biaya tersembunyi"
       />
     </div>
   );

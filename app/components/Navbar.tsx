@@ -172,7 +172,7 @@ export default function Navbar() {
                   href="/booking/riwayat"
                   active={pathname === '/booking/riwayat'}
                 >
-                  Riwayat Tamu
+                  Riwayat
                 </NavLink>
               )}
             </div>
@@ -344,7 +344,7 @@ export default function Navbar() {
                   onClick={() => setIsOpen(false)}
                   mobile
                 >
-                  Riwayat Tamu
+                  Riwayat
                 </NavLink>
               )}
 
