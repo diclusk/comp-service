@@ -1,0 +1,1467 @@
+diff --git a/app/api/auth/login/route.ts b/app/api/auth/login/route.ts
+new file mode 100644
+index 0000000..e33c6c0
+--- /dev/null
++++ b/app/api/auth/login/route.ts
+@@ -0,0 +1,24 @@
++import { NextRequest, NextResponse } from 'next/server';
++import { getSupabaseServer } from '@/lib/supabase/server';
++
++export async function POST(req: NextRequest) {
++  try {
++    const { email, password } = await req.json();
++
++    if (typeof email !== 'string' || typeof password !== 'string') {
++      return NextResponse.json({ error: 'Email dan password wajib diisi' }, { status: 400 });
++    }
++
++    const supabase = await getSupabaseServer();
++    const { error } = await supabase.auth.signInWithPassword({ email, password });
++
++    if (error) {
++      return NextResponse.json({ error: 'Email atau password salah' }, { status: 401 });
++    }
++
++    return NextResponse.json({ ok: true });
++  } catch (error) {
++    console.error('Login error:', error);
++    return NextResponse.json({ error: 'Gagal login' }, { status: 500 });
++  }
++}
+diff --git a/app/api/auth/logout/route.ts b/app/api/auth/logout/route.ts
+new file mode 100644
+index 0000000..ef5678a
+--- /dev/null
++++ b/app/api/auth/logout/route.ts
+@@ -0,0 +1,8 @@
++import { NextResponse } from 'next/server';
++import { getSupabaseServer } from '@/lib/supabase/server';
++
++export async function POST() {
++  const supabase = await getSupabaseServer();
++  await supabase.auth.signOut();
++  return NextResponse.json({ ok: true });
++}
+diff --git a/app/api/auth/signup/route.ts b/app/api/auth/signup/route.ts
+new file mode 100644
+index 0000000..78f628b
+--- /dev/null
++++ b/app/api/auth/signup/route.ts
+@@ -0,0 +1,32 @@
++import { NextRequest, NextResponse } from 'next/server';
++import { getSupabaseServer } from '@/lib/supabase/server';
++
++export async function POST(req: NextRequest) {
++  try {
++    const { email, password } = await req.json();
++
++    if (typeof email !== 'string' || typeof password !== 'string') {
++      return NextResponse.json({ error: 'Email dan password wajib diisi' }, { status: 400 });
++    }
++    if (password.length < 8) {
++      return NextResponse.json({ error: 'Password minimal 8 karakter' }, { status: 400 });
++    }
++
++    const supabase = await getSupabaseServer();
++    const { data, error } = await supabase.auth.signUp({ email, password });
++
++    if (error) {
++      return NextResponse.json({ error: error.message }, { status: 400 });
++    }
++
++    // Kalau email confirmation aktif di project Supabase, session di sini masih null
++    // sampai user klik link verifikasi.
++    return NextResponse.json({
++      user: data.user,
++      needsEmailConfirmation: !data.session,
++    });
++  } catch (error) {
++    console.error('Signup error:', error);
++    return NextResponse.json({ error: 'Gagal mendaftar' }, { status: 500 });
++  }
++}
+diff --git a/app/api/bookings/guest/route.ts b/app/api/bookings/guest/route.ts
+new file mode 100644
+index 0000000..e00e7fc
+--- /dev/null
++++ b/app/api/bookings/guest/route.ts
+@@ -0,0 +1,33 @@
++import { NextRequest, NextResponse } from 'next/server';
++import { getSupabase } from '@/lib/supabase';
++import type { Booking } from '@/lib/types';
++
++const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
++
++export async function GET(req: NextRequest) {
++  try {
++    const sessionId = req.nextUrl.searchParams.get('session_id');
++
++    // Wajib ada & harus UUID valid — jangan sampai bisa list semua booking
++    // dengan query kosong/asal.
++    if (!sessionId || !UUID_RE.test(sessionId)) {
++      return NextResponse.json({ error: 'session_id tidak valid' }, { status: 400 });
++    }
++
++    const supabase = getSupabase();
++    const { data, error } = await supabase
++      .from('bookings')
++      .select('*, customers(name, phone)')
++      .eq('guest_session_id', sessionId)
++      .order('scheduled_date', { ascending: false });
++
++    if (error) {
++      return NextResponse.json({ error: error.message }, { status: 400 });
++    }
++
++    return NextResponse.json({ bookings: (data || []) as Booking[] });
++  } catch (error) {
++    console.error('Guest bookings fetch error:', error);
++    return NextResponse.json({ error: 'Failed to fetch bookings' }, { status: 500 });
++  }
++}
+diff --git a/app/api/bookings/route.ts b/app/api/bookings/route.ts
+index 007bd56..690b32d 100644
+--- a/app/api/bookings/route.ts
++++ b/app/api/bookings/route.ts
+@@ -1,10 +1,24 @@
+ import { NextRequest, NextResponse } from 'next/server';
+ import { getSupabase } from '@/lib/supabase';
++import { getSupabaseServer } from '@/lib/supabase/server';
++import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
+ import type { Booking } from '@/lib/types';
+ 
+ const VALID_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'];
+ 
+-export async function GET() {
++// GET & PATCH di bawah ini data SEMUA customer (nama, telepon, email) — harus admin-only.
++// Sebelumnya endpoint ini tanpa auth check sama sekali (siapa saja yang hit URL-nya bisa
++// baca/ubah data), proxy.ts cuma proteksi halaman /dashboard bukan API-nya. Ditambahkan di sini.
++async function requireAdmin(req: NextRequest): Promise<boolean> {
++  const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
++  return verifySessionToken(token);
++}
++
++export async function GET(req: NextRequest) {
++  if (!(await requireAdmin(req))) {
++    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
++  }
++
+   try {
+     const supabase = getSupabase();
+     const { data, error } = await supabase
+@@ -27,7 +41,16 @@ export async function POST(req: NextRequest) {
+   try {
+     const supabase = getSupabase();
+     const body = await req.json();
+-    const { name, phone, email, device_type, service_type, description, scheduled_date } = body;
++    const {
++      name,
++      phone,
++      email,
++      device_type,
++      service_type,
++      description,
++      scheduled_date,
++      guest_session_id,
++    } = body;
+ 
+     if (!name || !phone || !service_type || !scheduled_date) {
+       return NextResponse.json(
+@@ -36,13 +59,22 @@ export async function POST(req: NextRequest) {
+       );
+     }
+ 
+-    // Upsert customer (by phone) so the dashboard can show the customer name/phone.
++    // Cek apakah request ini dari user yang sedang login (Supabase Auth).
++    // Kalau login: link customer ke akun (user_id). Kalau tidak: booking dilacak via
++    // guest_session_id (sessionStorage di client, hilang saat tab ditutup).
++    const supabaseAuth = await getSupabaseServer();
++    const {
++      data: { user },
++    } = await supabaseAuth.auth.getUser();
++
++    const customerPayload: Record<string, unknown> = { name, phone, email };
++    if (user) {
++      customerPayload.user_id = user.id;
++    }
++
+     const { data: customer, error: customerError } = await supabase
+       .from('customers')
+-      .upsert(
+-        { name, phone, email },
+-        { onConflict: 'phone' }
+-      )
++      .upsert(customerPayload, { onConflict: 'phone' })
+       .select()
+       .single();
+ 
+@@ -60,6 +92,9 @@ export async function POST(req: NextRequest) {
+           description: description || null,
+           scheduled_date,
+           status: 'pending',
++          // guest_session_id diabaikan (null) kalau user sedang login — riwayatnya
++          // sudah ke-link lewat customer.user_id, gak perlu dua jalur sekaligus.
++          guest_session_id: user ? null : guest_session_id || null,
+         },
+       ])
+       .select('*, customers(name, phone)')
+@@ -77,6 +112,10 @@ export async function POST(req: NextRequest) {
+ }
+ 
+ export async function PATCH(req: NextRequest) {
++  if (!(await requireAdmin(req))) {
++    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
++  }
++
+   try {
+     const supabase = getSupabase();
+     const body = await req.json();
+@@ -113,4 +152,3 @@ export async function PATCH(req: NextRequest) {
+     return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
+   }
+ }
+-
+diff --git a/app/booking/riwayat/page.tsx b/app/booking/riwayat/page.tsx
+new file mode 100644
+index 0000000..7f0cd8b
+--- /dev/null
++++ b/app/booking/riwayat/page.tsx
+@@ -0,0 +1,125 @@
++'use client';
++
++import { useEffect, useState } from 'react';
++import Link from 'next/link';
++import { getGuestSessionId } from '@/lib/guestSession';
++import { formatDate } from '@/lib/utils';
++import type { Booking } from '@/lib/types';
++
++const STATUS_LABELS: Record<string, string> = {
++  pending: 'Menunggu Konfirmasi',
++  confirmed: 'Dikonfirmasi',
++  completed: 'Selesai',
++  cancelled: 'Dibatalkan',
++};
++
++const STATUS_COLORS: Record<string, string> = {
++  pending: 'bg-amber-50 text-amber-700',
++  confirmed: 'bg-blue-50 text-blue-700',
++  completed: 'bg-emerald-50 text-emerald-700',
++  cancelled: 'bg-red-50 text-red-700',
++};
++
++export default function GuestBookingHistoryPage() {
++  const [bookings, setBookings] = useState<Booking[]>([]);
++  const [loading, setLoading] = useState(true);
++  const [error, setError] = useState('');
++  const [hasSession, setHasSession] = useState(true);
++
++  useEffect(() => {
++    async function run() {
++      const sessionId = getGuestSessionId();
++      if (!sessionId) {
++        setHasSession(false);
++        setLoading(false);
++        return;
++      }
++
++      try {
++        const res = await fetch(`/api/bookings/guest?session_id=${sessionId}`);
++        const body = await res.json();
++        if (!res.ok) throw new Error(body.error || 'Gagal memuat data');
++        setBookings(body.bookings || []);
++      } catch (err) {
++        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
++      } finally {
++        setLoading(false);
++      }
++    }
++
++    run();
++  }, []);
++
++  return (
++    <div className="min-h-screen bg-slate-50 px-4 py-12 sm:py-16">
++      <div className="mx-auto max-w-3xl">
++        <div className="mb-8">
++          <span className="text-xs font-medium uppercase tracking-wide text-teal-700">
++            Booking Tanpa Akun
++          </span>
++          <h1 className="mt-2 text-2xl font-semibold text-slate-900">Riwayat Booking Sesi Ini</h1>
++          <p className="mt-1 text-sm text-slate-500">
++            Riwayat ini hanya berlaku selama tab ini terbuka. Ingin riwayat tersimpan permanen?{' '}
++            <Link href="/signup" className="font-medium text-teal-700 hover:underline">
++              Buat akun
++            </Link>
++            .
++          </p>
++        </div>
++
++        {loading && <p className="text-sm text-slate-500">Memuat...</p>}
++
++        {!loading && !hasSession && (
++          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
++            <p className="text-sm text-slate-600">
++              Belum ada booking di sesi ini. Tab baru = riwayat kosong.
++            </p>
++            <Link
++              href="/booking"
++              className="mt-4 inline-block rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700"
++            >
++              Buat Booking
++            </Link>
++          </div>
++        )}
++
++        {!loading && error && (
++          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
++            {error}
++          </div>
++        )}
++
++        {!loading && hasSession && !error && bookings.length === 0 && (
++          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
++            <p className="text-sm text-slate-600">Belum ada booking di sesi ini.</p>
++          </div>
++        )}
++
++        <div className="space-y-4">
++          {bookings.map((b) => (
++            <div key={b.id} className="rounded-2xl border border-slate-200 bg-white p-5">
++              <div className="flex items-start justify-between gap-3">
++                <div>
++                  <p className="text-sm font-semibold text-slate-900">{b.service_type}</p>
++                  <p className="mt-0.5 text-xs text-slate-500">
++                    Jadwal: {formatDate(b.scheduled_date)}
++                  </p>
++                </div>
++                <span
++                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
++                    STATUS_COLORS[b.status] || 'bg-slate-100 text-slate-600'
++                  }`}
++                >
++                  {STATUS_LABELS[b.status] || b.status}
++                </span>
++              </div>
++              {b.description && (
++                <p className="mt-3 text-sm text-slate-600">{b.description}</p>
++              )}
++            </div>
++          ))}
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/app/components/BookingForm.tsx b/app/components/BookingForm.tsx
+index df3656f..6fd8c4a 100644
+--- a/app/components/BookingForm.tsx
++++ b/app/components/BookingForm.tsx
+@@ -1,6 +1,9 @@
+ 'use client';
+  
+-import { useState, FormEvent } from 'react';
++import { useState, useEffect, FormEvent } from 'react';
++import Link from 'next/link';
++import { getOrCreateGuestSessionId } from '@/lib/guestSession';
++import { getSupabaseBrowser } from '@/lib/supabase/client';
+  
+ type DeviceType = 'Laptop' | 'PC Desktop' | 'Printer' | 'Lainnya';
+ type ServiceType =
+@@ -48,6 +51,14 @@ export default function BookingForm() {
+   const [errors, setErrors] = useState<Partial<Record<keyof BookingFormData, string>>>({});
+   const [status, setStatus] = useState<SubmitStatus>('idle');
+   const [errorMessage, setErrorMessage] = useState('');
++  const [isLoggedIn, setIsLoggedIn] = useState(false);
++
++  useEffect(() => {
++    getSupabaseBrowser()
++      .auth.getUser()
++      .then(({ data }) => setIsLoggedIn(!!data.user))
++      .catch(() => setIsLoggedIn(false));
++  }, []);
+  
+   function update<K extends keyof BookingFormData>(key: K, value: BookingFormData[K]) {
+     setForm((prev) => ({ ...prev, [key]: value }));
+@@ -88,6 +99,9 @@ export default function BookingForm() {
+           service_type: form.serviceType,
+           description: form.description,
+           scheduled_date: form.scheduledDate,
++          // Dipakai server HANYA kalau request ini anonymous (belum login).
++          // Kalau user sedang login, server pakai user_id dari session, ini diabaikan.
++          guest_session_id: getOrCreateGuestSessionId(),
+         }),
+       });
+  
+@@ -137,6 +151,12 @@ export default function BookingForm() {
+             >
+               Buat Booking Lain
+             </button>
++            <Link
++              href={isLoggedIn ? '/my-bookings' : '/booking/riwayat'}
++              className="mt-4 ml-3 inline-block text-sm font-medium text-navy-700 hover:underline"
++            >
++              Lihat Riwayat Booking →
++            </Link>
+           </div>
+         ) : (
+           <form
+diff --git a/app/components/Navbar.tsx b/app/components/Navbar.tsx
+index 041cebc..f443b6b 100644
+--- a/app/components/Navbar.tsx
++++ b/app/components/Navbar.tsx
+@@ -1,8 +1,9 @@
+ 'use client';
+ 
+-import { useState, type ReactNode } from 'react';
++import { useState, useEffect, type ReactNode } from 'react';
+ import Link from 'next/link';
+ import { usePathname } from 'next/navigation';
++import { getSupabaseBrowser } from '@/lib/supabase/client';
+ 
+ const NAV_LINKS = [
+   { href: '/', label: 'Beranda' },
+@@ -12,6 +13,14 @@ const NAV_LINKS = [
+ export default function Navbar() {
+   const pathname = usePathname();
+   const [isOpen, setIsOpen] = useState(false);
++  const [isLoggedIn, setIsLoggedIn] = useState(false);
++
++  useEffect(() => {
++    getSupabaseBrowser()
++      .auth.getUser()
++      .then(({ data }) => setIsLoggedIn(!!data.user))
++      .catch(() => setIsLoggedIn(false));
++  }, []);
+ 
+   return (
+     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
+@@ -31,6 +40,9 @@ export default function Navbar() {
+               {link.label}
+             </NavLink>
+           ))}
++          <NavLink href={isLoggedIn ? '/my-bookings' : '/login'} active={pathname === '/my-bookings' || pathname === '/login'}>
++            {isLoggedIn ? 'Riwayat Saya' : 'Masuk'}
++          </NavLink>
+           <Link
+             href="/booking"
+             className="ml-2 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition
+@@ -70,6 +82,14 @@ export default function Navbar() {
+                 {link.label}
+               </NavLink>
+             ))}
++            <NavLink
++              href={isLoggedIn ? '/my-bookings' : '/login'}
++              active={pathname === '/my-bookings' || pathname === '/login'}
++              onClick={() => setIsOpen(false)}
++              mobile
++            >
++              {isLoggedIn ? 'Riwayat Saya' : 'Masuk'}
++            </NavLink>
+             <Link
+               href="/booking"
+               onClick={() => setIsOpen(false)}
+diff --git a/app/login/page.tsx b/app/login/page.tsx
+new file mode 100644
+index 0000000..1b08393
+--- /dev/null
++++ b/app/login/page.tsx
+@@ -0,0 +1,101 @@
++'use client';
++
++import { useState, FormEvent, Suspense } from 'react';
++import Link from 'next/link';
++import { useRouter, useSearchParams } from 'next/navigation';
++
++function LoginForm() {
++  const router = useRouter();
++  const searchParams = useSearchParams();
++  const [email, setEmail] = useState('');
++  const [password, setPassword] = useState('');
++  const [loading, setLoading] = useState(false);
++  const [error, setError] = useState('');
++
++  async function handleSubmit(e: FormEvent) {
++    e.preventDefault();
++    setLoading(true);
++    setError('');
++
++    try {
++      const res = await fetch('/api/auth/login', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ email, password }),
++      });
++
++      if (!res.ok) {
++        const body = await res.json().catch(() => null);
++        throw new Error(body?.error || 'Gagal login');
++      }
++
++      const redirect = searchParams.get('redirect') || '/my-bookings';
++      router.push(redirect);
++      router.refresh();
++    } catch (err) {
++      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
++    } finally {
++      setLoading(false);
++    }
++  }
++
++  return (
++    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
++      <form
++        onSubmit={handleSubmit}
++        className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
++      >
++        <h1 className="text-lg font-semibold text-navy-900">Masuk</h1>
++        <p className="mt-1 text-sm text-navy-500">Lihat riwayat booking servis kamu.</p>
++
++        <label className="mt-6 block text-xs font-medium text-navy-600">Email</label>
++        <input
++          type="email"
++          value={email}
++          onChange={(e) => setEmail(e.target.value)}
++          autoFocus
++          required
++          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
++        />
++
++        <label className="mt-4 block text-xs font-medium text-navy-600">Password</label>
++        <input
++          type="password"
++          value={password}
++          onChange={(e) => setPassword(e.target.value)}
++          required
++          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
++        />
++
++        {error && (
++          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
++            {error}
++          </div>
++        )}
++
++        <button
++          type="submit"
++          disabled={loading}
++          className="mt-5 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700 disabled:cursor-not-allowed disabled:opacity-60"
++        >
++          {loading ? 'Memproses...' : 'Masuk'}
++        </button>
++
++        <p className="mt-4 text-center text-xs text-navy-500">
++          Belum punya akun?{' '}
++          <Link href="/signup" className="font-medium text-navy-900 hover:underline">
++            Daftar
++          </Link>
++        </p>
++      </form>
++    </div>
++  );
++}
++
++export default function LoginPage() {
++  return (
++    <Suspense fallback={null}>
++      <LoginForm />
++    </Suspense>
++  );
++}
+diff --git a/app/my-bookings/page.tsx b/app/my-bookings/page.tsx
+new file mode 100644
+index 0000000..06a6004
+--- /dev/null
++++ b/app/my-bookings/page.tsx
+@@ -0,0 +1,136 @@
++import type { Metadata } from 'next';
++import Link from 'next/link';
++import { redirect } from 'next/navigation';
++import { getSupabaseServer } from '@/lib/supabase/server';
++import { getSupabase } from '@/lib/supabase';
++import { formatDate } from '@/lib/utils';
++import type { Booking } from '@/lib/types';
++
++export const metadata: Metadata = {
++  title: 'Riwayat Booking Saya',
++};
++
++const STATUS_LABELS: Record<string, string> = {
++  pending: 'Menunggu Konfirmasi',
++  confirmed: 'Dikonfirmasi',
++  completed: 'Selesai',
++  cancelled: 'Dibatalkan',
++};
++
++const STATUS_COLORS: Record<string, string> = {
++  pending: 'bg-amber-50 text-amber-700',
++  confirmed: 'bg-blue-50 text-blue-700',
++  completed: 'bg-emerald-50 text-emerald-700',
++  cancelled: 'bg-red-50 text-red-700',
++};
++
++export default async function MyBookingsPage() {
++  // proxy.ts sudah redirect ke /login kalau belum login; guard ini jaga-jaga
++  // kalau page diakses lewat jalur lain (mis. prefetch) sebelum proxy jalan.
++  const supabaseAuth = await getSupabaseServer();
++  const {
++    data: { user },
++  } = await supabaseAuth.auth.getUser();
++
++  if (!user) {
++    redirect('/login?redirect=/my-bookings');
++  }
++
++  const supabase = getSupabase();
++
++  const { data: customers, error: customersError } = await supabase
++    .from('customers')
++    .select('id')
++    .eq('user_id', user.id);
++
++  let bookings: Booking[] = [];
++  let loadError = '';
++
++  if (customersError) {
++    loadError = customersError.message;
++  } else {
++    const customerIds = (customers || []).map((c) => c.id);
++    if (customerIds.length > 0) {
++      const { data, error } = await supabase
++        .from('bookings')
++        .select('*, customers(name, phone)')
++        .in('customer_id', customerIds)
++        .order('scheduled_date', { ascending: false });
++
++      if (error) {
++        loadError = error.message;
++      } else {
++        bookings = (data || []) as Booking[];
++      }
++    }
++  }
++
++  return (
++    <div className="min-h-screen bg-slate-50 px-4 py-12 sm:py-16">
++      <div className="mx-auto max-w-3xl">
++        <div className="mb-8 flex items-center justify-between">
++          <div>
++            <span className="text-xs font-medium uppercase tracking-wide text-teal-700">
++              Akun Saya
++            </span>
++            <h1 className="mt-2 text-2xl font-semibold text-slate-900">Riwayat Booking</h1>
++            <p className="mt-1 text-sm text-slate-500">
++              Masuk sebagai <span className="font-medium">{user.email}</span>
++            </p>
++          </div>
++          <form action="/api/auth/logout" method="post">
++            <button
++              type="submit"
++              className="rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-medium text-slate-600 transition hover:bg-slate-100"
++            >
++              Keluar
++            </button>
++          </form>
++        </div>
++
++        {loadError && (
++          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
++            {loadError}
++          </div>
++        )}
++
++        {!loadError && bookings.length === 0 && (
++          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
++            <p className="text-sm text-slate-600">Belum ada booking di akun ini.</p>
++            <Link
++              href="/booking"
++              className="mt-4 inline-block rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700"
++            >
++              Buat Booking
++            </Link>
++          </div>
++        )}
++
++        <div className="space-y-4">
++          {bookings.map((b) => (
++            <div key={b.id} className="rounded-2xl border border-slate-200 bg-white p-5">
++              <div className="flex items-start justify-between gap-3">
++                <div>
++                  <p className="text-sm font-semibold text-slate-900">{b.service_type}</p>
++                  <p className="mt-0.5 text-xs text-slate-500">
++                    Jadwal: {formatDate(b.scheduled_date)}
++                  </p>
++                </div>
++                <span
++                  className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium ${
++                    STATUS_COLORS[b.status] || 'bg-slate-100 text-slate-600'
++                  }`}
++                >
++                  {STATUS_LABELS[b.status] || b.status}
++                </span>
++              </div>
++              {b.description && (
++                <p className="mt-3 text-sm text-slate-600">{b.description}</p>
++              )}
++            </div>
++          ))}
++        </div>
++      </div>
++    </div>
++  );
++}
+diff --git a/app/signup/page.tsx b/app/signup/page.tsx
+new file mode 100644
+index 0000000..3f360f4
+--- /dev/null
++++ b/app/signup/page.tsx
+@@ -0,0 +1,121 @@
++'use client';
++
++import { useState, FormEvent } from 'react';
++import Link from 'next/link';
++import { useRouter } from 'next/navigation';
++
++export default function SignupPage() {
++  const router = useRouter();
++  const [email, setEmail] = useState('');
++  const [password, setPassword] = useState('');
++  const [loading, setLoading] = useState(false);
++  const [error, setError] = useState('');
++  const [needsConfirmation, setNeedsConfirmation] = useState(false);
++
++  async function handleSubmit(e: FormEvent) {
++    e.preventDefault();
++    setLoading(true);
++    setError('');
++
++    try {
++      const res = await fetch('/api/auth/signup', {
++        method: 'POST',
++        headers: { 'Content-Type': 'application/json' },
++        body: JSON.stringify({ email, password }),
++      });
++
++      const body = await res.json().catch(() => null);
++      if (!res.ok) {
++        throw new Error(body?.error || 'Gagal mendaftar');
++      }
++
++      if (body?.needsEmailConfirmation) {
++        setNeedsConfirmation(true);
++        return;
++      }
++
++      router.push('/my-bookings');
++      router.refresh();
++    } catch (err) {
++      setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
++    } finally {
++      setLoading(false);
++    }
++  }
++
++  if (needsConfirmation) {
++    return (
++      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
++        <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
++          <h1 className="text-lg font-semibold text-navy-900">Cek email kamu</h1>
++          <p className="mt-2 text-sm text-navy-600">
++            Kami sudah kirim link konfirmasi ke <span className="font-medium">{email}</span>.
++            Klik link itu dulu sebelum login.
++          </p>
++          <Link
++            href="/login"
++            className="mt-5 inline-block rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700"
++          >
++            Ke Halaman Login
++          </Link>
++        </div>
++      </div>
++    );
++  }
++
++  return (
++    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
++      <form
++        onSubmit={handleSubmit}
++        className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
++      >
++        <h1 className="text-lg font-semibold text-navy-900">Daftar Akun</h1>
++        <p className="mt-1 text-sm text-navy-500">
++          Riwayat booking kamu tersimpan selamanya selama akun masih ada.
++        </p>
++
++        <label className="mt-6 block text-xs font-medium text-navy-600">Email</label>
++        <input
++          type="email"
++          value={email}
++          onChange={(e) => setEmail(e.target.value)}
++          autoFocus
++          required
++          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
++        />
++
++        <label className="mt-4 block text-xs font-medium text-navy-600">Password</label>
++        <input
++          type="password"
++          value={password}
++          onChange={(e) => setPassword(e.target.value)}
++          required
++          minLength={8}
++          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
++        />
++        <p className="mt-1 text-xs text-navy-400">Minimal 8 karakter.</p>
++
++        {error && (
++          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
++            {error}
++          </div>
++        )}
++
++        <button
++          type="submit"
++          disabled={loading}
++          className="mt-5 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700 disabled:cursor-not-allowed disabled:opacity-60"
++        >
++          {loading ? 'Memproses...' : 'Daftar'}
++        </button>
++
++        <p className="mt-4 text-center text-xs text-navy-500">
++          Sudah punya akun?{' '}
++          <Link href="/login" className="font-medium text-navy-900 hover:underline">
++            Masuk
++          </Link>
++        </p>
++      </form>
++    </div>
++  );
++}
+diff --git a/lib/guestSession.ts b/lib/guestSession.ts
+new file mode 100644
+index 0000000..09233cd
+--- /dev/null
++++ b/lib/guestSession.ts
+@@ -0,0 +1,19 @@
++// Identitas booking anonymous, disimpan di sessionStorage (BUKAN localStorage) supaya
++// otomatis hilang begitu tab ditutup — sesuai requirement dashboard anon.
++const GUEST_SESSION_KEY = 'fixkom_guest_session_id';
++
++/** Ambil guest_session_id yang sudah ada, atau buat baru kalau belum ada di tab ini. */
++export function getOrCreateGuestSessionId(): string {
++  if (typeof window === 'undefined') return '';
++  const existing = window.sessionStorage.getItem(GUEST_SESSION_KEY);
++  if (existing) return existing;
++  const id = crypto.randomUUID();
++  window.sessionStorage.setItem(GUEST_SESSION_KEY, id);
++  return id;
++}
++
++/** Baca guest_session_id kalau ada, tanpa bikin baru (dipakai di halaman riwayat). */
++export function getGuestSessionId(): string | null {
++  if (typeof window === 'undefined') return null;
++  return window.sessionStorage.getItem(GUEST_SESSION_KEY);
++}
+diff --git a/lib/supabase/client.ts b/lib/supabase/client.ts
+new file mode 100644
+index 0000000..48946ab
+--- /dev/null
++++ b/lib/supabase/client.ts
+@@ -0,0 +1,8 @@
++import { createBrowserClient } from '@supabase/ssr';
++
++export function getSupabaseBrowser() {
++  return createBrowserClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!
++  );
++}
+diff --git a/lib/supabase/server.ts b/lib/supabase/server.ts
+new file mode 100644
+index 0000000..2788906
+--- /dev/null
++++ b/lib/supabase/server.ts
+@@ -0,0 +1,30 @@
++import { createServerClient } from '@supabase/ssr';
++import { cookies } from 'next/headers';
++
++// Dipakai di Server Component & Route Handler. Di Server Component, set()/delete()
++// akan gagal diam-diam (Next.js tidak izinkan tulis cookie saat render) — itu wajar,
++// karena refresh token tetap ditangani oleh proxy.ts di setiap request.
++export async function getSupabaseServer() {
++  const cookieStore = await cookies();
++
++  return createServerClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
++    {
++      cookies: {
++        getAll() {
++          return cookieStore.getAll();
++        },
++        setAll(cookiesToSet) {
++          try {
++            cookiesToSet.forEach(({ name, value, options }) =>
++              cookieStore.set(name, value, options)
++            );
++          } catch {
++            // dipanggil dari Server Component — abaikan, proxy.ts yang refresh session
++          }
++        },
++      },
++    }
++  );
++}
+diff --git a/lib/types.ts b/lib/types.ts
+index 94d6766..fc7269b 100644
+--- a/lib/types.ts
++++ b/lib/types.ts
+@@ -45,6 +45,8 @@ export type Booking = {
+   description?: string | null;
+   scheduled_date: string;
+   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
++  customer_id?: string;
++  guest_session_id?: string | null;
+   customers?: { name: string; phone: string } | null;
+   created_at?: string;
+ };
+diff --git a/package-lock.json b/package-lock.json
+index df7e529..763270e 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -9,6 +9,7 @@
+       "version": "0.1.0",
+       "dependencies": {
+         "@phosphor-icons/react": "^2.1.10",
++        "@supabase/ssr": "^0.12.4",
+         "@supabase/supabase-js": "^2.112.0",
+         "lucide-react": "^1.31.0",
+         "next": "^16.3.0",
+@@ -636,9 +637,6 @@
+       "cpu": [
+         "arm"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "LGPL-3.0-or-later",
+       "optional": true,
+       "os": [
+@@ -655,9 +653,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "LGPL-3.0-or-later",
+       "optional": true,
+       "os": [
+@@ -674,9 +669,6 @@
+       "cpu": [
+         "ppc64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "LGPL-3.0-or-later",
+       "optional": true,
+       "os": [
+@@ -693,9 +685,6 @@
+       "cpu": [
+         "riscv64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "LGPL-3.0-or-later",
+       "optional": true,
+       "os": [
+@@ -712,9 +701,6 @@
+       "cpu": [
+         "s390x"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "LGPL-3.0-or-later",
+       "optional": true,
+       "os": [
+@@ -731,9 +717,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "LGPL-3.0-or-later",
+       "optional": true,
+       "os": [
+@@ -750,9 +733,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "LGPL-3.0-or-later",
+       "optional": true,
+       "os": [
+@@ -769,9 +749,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "LGPL-3.0-or-later",
+       "optional": true,
+       "os": [
+@@ -788,9 +765,6 @@
+       "cpu": [
+         "arm"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "Apache-2.0",
+       "optional": true,
+       "os": [
+@@ -813,9 +787,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "Apache-2.0",
+       "optional": true,
+       "os": [
+@@ -838,9 +809,6 @@
+       "cpu": [
+         "ppc64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "Apache-2.0",
+       "optional": true,
+       "os": [
+@@ -863,9 +831,6 @@
+       "cpu": [
+         "riscv64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "Apache-2.0",
+       "optional": true,
+       "os": [
+@@ -888,9 +853,6 @@
+       "cpu": [
+         "s390x"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "Apache-2.0",
+       "optional": true,
+       "os": [
+@@ -913,9 +875,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "Apache-2.0",
+       "optional": true,
+       "os": [
+@@ -938,9 +897,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "Apache-2.0",
+       "optional": true,
+       "os": [
+@@ -963,9 +919,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "Apache-2.0",
+       "optional": true,
+       "os": [
+@@ -1233,9 +1186,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -1252,9 +1202,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -1271,9 +1218,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -1290,9 +1234,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -1457,6 +1398,18 @@
+         "node": ">=22.0.0"
+       }
+     },
++    "node_modules/@supabase/ssr": {
++      "version": "0.12.4",
++      "resolved": "https://registry.npmjs.org/@supabase/ssr/-/ssr-0.12.4.tgz",
++      "integrity": "sha512-xHzcgI8cC1TpBKSwJcR5Yd8CCwfIq0SBc5yb4yz/YFw5tbCrEQ0QT3a+2jymCxHgQWLfzwN93HZ6eRbcoMkOlA==",
++      "license": "MIT",
++      "dependencies": {
++        "cookie": "^1.0.2"
++      },
++      "peerDependencies": {
++        "@supabase/supabase-js": "^2.111.0"
++      }
++    },
+     "node_modules/@supabase/storage-js": {
+       "version": "2.112.0",
+       "resolved": "https://registry.npmjs.org/@supabase/storage-js/-/storage-js-2.112.0.tgz",
+@@ -1636,9 +1589,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -1656,9 +1606,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -1676,9 +1623,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -1696,9 +1640,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2249,9 +2190,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2266,9 +2204,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2283,9 +2218,6 @@
+         "loong64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2300,9 +2232,6 @@
+         "loong64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2317,9 +2246,6 @@
+         "ppc64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2334,9 +2260,6 @@
+         "riscv64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2351,9 +2274,6 @@
+         "riscv64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2368,9 +2288,6 @@
+         "s390x"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2385,9 +2302,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2402,9 +2316,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -2997,6 +2908,19 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/cookie": {
++      "version": "1.1.1",
++      "resolved": "https://registry.npmjs.org/cookie/-/cookie-1.1.1.tgz",
++      "integrity": "sha512-ei8Aos7ja0weRpFzJnEA9UHJ/7XQmqglbRwnf2ATjcB9Wq874VKH9kfjjirM6UhU2/E5fFYadylyhFldcqSidQ==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=18"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/express"
++      }
++    },
+     "node_modules/cross-spawn": {
+       "version": "7.0.6",
+       "resolved": "https://registry.npmjs.org/cross-spawn/-/cross-spawn-7.0.6.tgz",
+@@ -5116,9 +5040,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MPL-2.0",
+       "optional": true,
+       "os": [
+@@ -5140,9 +5061,6 @@
+         "arm64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MPL-2.0",
+       "optional": true,
+       "os": [
+@@ -5164,9 +5082,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "glibc"
+-      ],
+       "license": "MPL-2.0",
+       "optional": true,
+       "os": [
+@@ -5188,9 +5103,6 @@
+         "x64"
+       ],
+       "dev": true,
+-      "libc": [
+-        "musl"
+-      ],
+       "license": "MPL-2.0",
+       "optional": true,
+       "os": [
+diff --git a/package.json b/package.json
+index ebc201e..233f305 100644
+--- a/package.json
++++ b/package.json
+@@ -10,6 +10,7 @@
+   },
+   "dependencies": {
+     "@phosphor-icons/react": "^2.1.10",
++    "@supabase/ssr": "^0.12.4",
+     "@supabase/supabase-js": "^2.112.0",
+     "lucide-react": "^1.31.0",
+     "next": "^16.3.0",
+diff --git a/proxy.ts b/proxy.ts
+index f2ea6c9..c654536 100644
+--- a/proxy.ts
++++ b/proxy.ts
+@@ -1,20 +1,66 @@
+ import { NextRequest, NextResponse } from 'next/server';
++import { createServerClient } from '@supabase/ssr';
+ import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
+ 
+ export async function proxy(req: NextRequest) {
+-  const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
+-  const valid = await verifySessionToken(token);
++  // --- Admin guard (custom HMAC cookie, terpisah dari Supabase Auth) ---
++  if (req.nextUrl.pathname.startsWith('/dashboard')) {
++    const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
++    const valid = await verifySessionToken(token);
+ 
+-  if (!valid) {
++    if (!valid) {
++      const url = req.nextUrl.clone();
++      url.pathname = '/admin/login';
++      url.searchParams.set('redirect', req.nextUrl.pathname);
++      return NextResponse.redirect(url);
++    }
++
++    return NextResponse.next();
++  }
++
++  // --- Supabase Auth: refresh session cookie + guard /my-bookings ---
++  let response = NextResponse.next({ request: req });
++
++  const supabase = createServerClient(
++    process.env.NEXT_PUBLIC_SUPABASE_URL!,
++    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
++    {
++      cookies: {
++        getAll() {
++          return req.cookies.getAll();
++        },
++        setAll(cookiesToSet) {
++          cookiesToSet.forEach(({ name, value }) => req.cookies.set(name, value));
++          response = NextResponse.next({ request: req });
++          cookiesToSet.forEach(({ name, value, options }) =>
++            response.cookies.set(name, value, options)
++          );
++        },
++      },
++    }
++  );
++
++  const {
++    data: { user },
++  } = await supabase.auth.getUser();
++
++  if (req.nextUrl.pathname.startsWith('/my-bookings') && !user) {
+     const url = req.nextUrl.clone();
+-    url.pathname = '/admin/login';
++    url.pathname = '/login';
+     url.searchParams.set('redirect', req.nextUrl.pathname);
+     return NextResponse.redirect(url);
+   }
+ 
+-  return NextResponse.next();
++  if ((req.nextUrl.pathname === '/login' || req.nextUrl.pathname === '/signup') && user) {
++    const url = req.nextUrl.clone();
++    url.pathname = '/my-bookings';
++    url.search = '';
++    return NextResponse.redirect(url);
++  }
++
++  return response;
+ }
+ 
+ export const config = {
+-  matcher: ['/dashboard/:path*'],
++  matcher: ['/dashboard/:path*', '/my-bookings/:path*', '/login', '/signup'],
+ };
+diff --git a/supabase/migrations/20260815_user_auth_guest_bookings.sql b/supabase/migrations/20260815_user_auth_guest_bookings.sql
+new file mode 100644
+index 0000000..a34fbfa
+--- /dev/null
++++ b/supabase/migrations/20260815_user_auth_guest_bookings.sql
+@@ -0,0 +1,15 @@
++-- Migration: user login (Supabase Auth) + anonymous guest booking session
++-- Jalankan manual di Supabase Dashboard > SQL Editor (project "computer-service")
++
++-- 1. Link tabel customers ke akun Supabase Auth (nullable — customer anon gak punya ini)
++alter table customers
++  add column if not exists user_id uuid references auth.users(id);
++
++-- 2. Identitas booking anonymous (sessionStorage di client, nullable — booking dari user
++--    yang login gak butuh ini karena sudah ke-link lewat customers.user_id)
++alter table bookings
++  add column if not exists guest_session_id uuid;
++
++-- Index buat mempercepat query dashboard
++create index if not exists idx_customers_user_id on customers(user_id);
++create index if not exists idx_bookings_guest_session_id on bookings(guest_session_id);

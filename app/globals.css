@@ -1,11 +1,6 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* ============================================================
-   DESIGN TOKENS — dibutuhkan oleh komponen (jangan dihapus
-   sebelum kamu mengganti styling pada komponennya).
-   Silakan modifikasi sesuai selera desainmu sendiri.
-   ============================================================ */
 @theme {
   --color-volt: #ccff00;
   --color-punch: #ff007f;

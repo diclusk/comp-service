@@ -12,7 +12,7 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  async function handleSubmit(e: FormEvent) {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
@@ -37,58 +37,103 @@ function LoginForm() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
-      >
-        <h1 className="text-lg font-semibold text-navy-900">Masuk</h1>
-        <p className="mt-1 text-sm text-navy-500">Lihat riwayat booking servis kamu.</p>
+    <main className="min-h-screen bg-[#060a13] flex items-center justify-center px-4 py-24">
+      <div className="relative w-full max-w-md rounded-2xl p-0.5 overflow-hidden">
+        {/* rotating glow ring — bigger than the box so the sweep reads clearly, clipped by overflow-hidden */}
+        <div className="pointer-events-none absolute inset-[-60%] animate-spin-slow spin-ring" />
 
-        <label className="mt-6 block text-xs font-medium text-navy-600">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoFocus
-          required
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
-        />
+        {/* card */}
+        <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 shadow-2xl shadow-black/40">
+          <h1 className="text-2xl font-bold text-white">Masuk</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Lihat riwayat booking servis kamu.
+          </p>
 
-        <label className="mt-4 block text-xs font-medium text-navy-600">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
-        />
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-300">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="mt-1.5 w-full rounded-lg bg-[#0f1826] border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-teal-400/60 focus:ring-2 focus:ring-teal-400/20"
+                placeholder="nama@email.com"
+              />
+            </div>
 
-        {error && (
-          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-            {error}
-          </div>
-        )}
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="mt-1.5 w-full rounded-lg bg-[#0f1826] border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-teal-400/60 focus:ring-2 focus:ring-teal-400/20"
+                placeholder="••••••••••"
+              />
+            </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-5 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700 disabled:cursor-not-allowed disabled:opacity-60"
-        >
-          {loading ? 'Memproses...' : 'Masuk'}
-        </button>
+            {error && (
+              <div className="rounded-lg border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-300">
+                {error}
+              </div>
+            )}
 
-        <p className="mt-4 text-center text-xs text-navy-500">
-          Belum punya akun?{' '}
-          <Link href="/signup" className="font-medium text-navy-900 hover:underline">
-            Daftar
-          </Link>
-        </p>
-      </form>
-    </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-teal-400 py-2.5 text-sm font-semibold text-[#06110f] transition hover:bg-teal-300 disabled:opacity-60"
+            >
+              {loading ? 'Memproses...' : 'Masuk'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Belum punya akun?{' '}
+            <Link href="/signup" className="text-teal-400 hover:text-teal-300 font-medium">
+              Daftar
+            </Link>
+          </p>
+        </div>
+      </div>
+
+      <style jsx>{`
+        .spin-ring {
+          background: conic-gradient(
+            from 0deg,
+            transparent 0deg,
+            #2dd4bf 60deg,
+            transparent 140deg,
+            transparent 260deg,
+            #22d3ee 340deg,
+            transparent 360deg
+          );
+        }
+        .animate-spin-slow {
+          animation: spin-slow 3.5s linear infinite;
+        }
+        @keyframes spin-slow {
+          to {
+            transform: rotate(360deg);
+          }
+        }
+        @media (prefers-reduced-motion: reduce) {
+          .animate-spin-slow {
+            animation: none;
+          }
+        }
+      `}</style>
+    </main>
   );
 }
 
