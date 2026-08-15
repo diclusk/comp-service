@@ -1,10 +1,24 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase/server';
+import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
 import type { Booking } from '@/lib/types';
 
 const VALID_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'];
 
-export async function GET() {
+// GET & PATCH di bawah ini data SEMUA customer (nama, telepon, email) — harus admin-only.
+// Sebelumnya endpoint ini tanpa auth check sama sekali (siapa saja yang hit URL-nya bisa
+// baca/ubah data), proxy.ts cuma proteksi halaman /dashboard bukan API-nya. Ditambahkan di sini.
+async function requireAdmin(req: NextRequest): Promise<boolean> {
+  const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  return verifySessionToken(token);
+}
+
+export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
@@ -27,7 +41,16 @@ export async function POST(req: NextRequest) {
   try {
     const supabase = getSupabase();
     const body = await req.json();
-    const { name, phone, email, device_type, service_type, description, scheduled_date } = body;
+    const {
+      name,
+      phone,
+      email,
+      device_type,
+      service_type,
+      description,
+      scheduled_date,
+      guest_session_id,
+    } = body;
 
     if (!name || !phone || !service_type || !scheduled_date) {
       return NextResponse.json(
@@ -36,13 +59,22 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Upsert customer (by phone) so the dashboard can show the customer name/phone.
+    // Cek apakah request ini dari user yang sedang login (Supabase Auth).
+    // Kalau login: link customer ke akun (user_id). Kalau tidak: booking dilacak via
+    // guest_session_id (sessionStorage di client, hilang saat tab ditutup).
+    const supabaseAuth = await getSupabaseServer();
+    const {
+      data: { user },
+    } = await supabaseAuth.auth.getUser();
+
+    const customerPayload: Record<string, unknown> = { name, phone, email };
+    if (user) {
+      customerPayload.user_id = user.id;
+    }
+
     const { data: customer, error: customerError } = await supabase
       .from('customers')
-      .upsert(
-        { name, phone, email },
-        { onConflict: 'phone' }
-      )
+      .upsert(customerPayload, { onConflict: 'phone' })
       .select()
       .single();
 
@@ -60,6 +92,9 @@ export async function POST(req: NextRequest) {
           description: description || null,
           scheduled_date,
           status: 'pending',
+          // guest_session_id diabaikan (null) kalau user sedang login — riwayatnya
+          // sudah ke-link lewat customer.user_id, gak perlu dua jalur sekaligus.
+          guest_session_id: user ? null : guest_session_id || null,
         },
       ])
       .select('*, customers(name, phone)')
@@ -77,6 +112,10 @@ export async function POST(req: NextRequest) {
 }
 
 export async function PATCH(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const supabase = getSupabase();
     const body = await req.json();
@@ -113,4 +152,3 @@ export async function PATCH(req: NextRequest) {
     return NextResponse.json({ error: 'Failed to update booking' }, { status: 500 });
   }
 }
-

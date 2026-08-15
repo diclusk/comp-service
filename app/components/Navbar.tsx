@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
+import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
 
 const NAV_LINKS = [
   { href: '/', label: 'Beranda' },
@@ -12,6 +13,14 @@ const NAV_LINKS = [
 export default function Navbar() {
   const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    getSupabaseBrowser()
+      .auth.getUser()
+      .then(({ data }) => setIsLoggedIn(!!data.user))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/90 backdrop-blur">
@@ -31,6 +40,9 @@ export default function Navbar() {
               {link.label}
             </NavLink>
           ))}
+          <NavLink href={isLoggedIn ? '/my-bookings' : '/login'} active={pathname === '/my-bookings' || pathname === '/login'}>
+            {isLoggedIn ? 'Riwayat Saya' : 'Masuk'}
+          </NavLink>
           <Link
             href="/booking"
             className="ml-2 rounded-lg bg-teal-700 px-4 py-2 text-sm font-medium text-white transition
@@ -70,6 +82,14 @@ export default function Navbar() {
                 {link.label}
               </NavLink>
             ))}
+            <NavLink
+              href={isLoggedIn ? '/my-bookings' : '/login'}
+              active={pathname === '/my-bookings' || pathname === '/login'}
+              onClick={() => setIsOpen(false)}
+              mobile
+            >
+              {isLoggedIn ? 'Riwayat Saya' : 'Masuk'}
+            </NavLink>
             <Link
               href="/booking"
               onClick={() => setIsOpen(false)}

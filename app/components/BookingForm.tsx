@@ -1,6 +1,9 @@
 'use client';
  
-import { useState, FormEvent } from 'react';
+import { useState, useEffect, FormEvent } from 'react';
+import Link from 'next/link';
+import { getOrCreateGuestSessionId } from '@/lib/Guestsession';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
  
 type DeviceType = 'Laptop' | 'PC Desktop' | 'Printer' | 'Lainnya';
 type ServiceType =
@@ -48,6 +51,14 @@ export default function BookingForm() {
   const [errors, setErrors] = useState<Partial<Record<keyof BookingFormData, string>>>({});
   const [status, setStatus] = useState<SubmitStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    getSupabaseBrowser()
+      .auth.getUser()
+      .then(({ data }) => setIsLoggedIn(!!data.user))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
  
   function update<K extends keyof BookingFormData>(key: K, value: BookingFormData[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -88,6 +99,9 @@ export default function BookingForm() {
           service_type: form.serviceType,
           description: form.description,
           scheduled_date: form.scheduledDate,
+          // Dipakai server HANYA kalau request ini anonymous (belum login).
+          // Kalau user sedang login, server pakai user_id dari session, ini diabaikan.
+          guest_session_id: getOrCreateGuestSessionId(),
         }),
       });
  
@@ -137,6 +151,12 @@ export default function BookingForm() {
             >
               Buat Booking Lain
             </button>
+            <Link
+              href={isLoggedIn ? '/my-bookings' : '/booking/riwayat'}
+              className="mt-4 ml-3 inline-block text-sm font-medium text-navy-700 hover:underline"
+            >
+              Lihat Riwayat Booking →
+            </Link>
           </div>
         ) : (
           <form

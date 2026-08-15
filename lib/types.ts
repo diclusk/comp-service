@@ -1,7 +1,3 @@
-// Shared TypeScript types for the FIXKOM_ application.
-
-
-
 export type Service = {
   slug: string;
   name: string;
@@ -45,6 +41,8 @@ export type Booking = {
   description?: string | null;
   scheduled_date: string;
   status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  customer_id?: string;
+  guest_session_id?: string | null;
   customers?: { name: string; phone: string } | null;
   created_at?: string;
 };
@@ -53,4 +51,3 @@ export type ChatMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
 };
-
