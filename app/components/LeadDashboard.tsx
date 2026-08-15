@@ -2,16 +2,23 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-  ArrowsDownUp, ChartBar, CheckSquare, CircleNotch, Funnel, UsersThree, CalendarCheck, WarningCircle,
+  ArrowsDownUp,
+  ChartBar,
+  CheckSquare,
+  CircleNotch,
+  Funnel,
+  UsersThree,
+  CalendarCheck,
+  WarningCircle,
 } from '@phosphor-icons/react';
 import type { Lead, Booking } from '@/lib/types';
 import { formatDate, formatBudget } from '@/lib/utils';
 
-const STATUS_COLORS: Record<string, string> = {
-  pending: 'bg-yellow-400 text-black',
-  confirmed: 'bg-cyber text-black',
-  completed: 'bg-volt text-black',
-  cancelled: 'bg-punch text-white',
+const BOOKING_STATUS_STYLES: Record<string, string> = {
+  pending: 'border-amber-400/20 bg-amber-400/10 text-amber-300',
+  confirmed: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
+  completed: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
+  cancelled: 'border-red-400/20 bg-red-400/10 text-red-300',
 };
 
 export const LeadDashboard = () => {
@@ -49,19 +56,12 @@ export const LeadDashboard = () => {
   }, [filter, sortAsc]);
 
   useEffect(() => {
-    let cancelled = false;
-    const run = async () => {
-      try {
-        await load();
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-    run();
-    return () => {
-      cancelled = true;
-    };
-  }, [load]);
+  const fetchData = async () => {
+    await load();
+  };
+  
+  fetchData();
+}, [load]);
 
   const toggleQualified = async (lead: Lead) => {
     await fetch('/api/leads', {
@@ -83,140 +83,219 @@ export const LeadDashboard = () => {
 
   const qualifiedCount = leads.filter((l) => l.qualified).length;
   const stats = [
-    { label: 'TOTAL_LEADS', value: leads.length, icon: UsersThree, color: 'text-cyber' },
-    { label: 'QUALIFIED', value: qualifiedCount, icon: CheckSquare, color: 'text-volt' },
-    { label: 'BOOKINGS', value: bookings.length, icon: CalendarCheck, color: 'text-punch' },
-    { label: 'CONV_RATE', value: leads.length ? `${Math.round((bookings.length / leads.length) * 100)}%` : '0%', icon: ChartBar, color: 'text-white' },
+    { label: 'Total Leads', value: leads.length, icon: UsersThree, color: 'text-teal-400' },
+    { label: 'Qualified', value: qualifiedCount, icon: CheckSquare, color: 'text-emerald-400' },
+    { label: 'Booking', value: bookings.length, icon: CalendarCheck, color: 'text-amber-300' },
+    {
+      label: 'Conversion',
+      value: leads.length ? `${Math.round((bookings.length / leads.length) * 100)}%` : '0%',
+      icon: ChartBar,
+      color: 'text-slate-300',
+    },
   ];
 
-  const cliBtn = (active: boolean) =>
-    `font-mono text-xs font-bold uppercase tracking-widest border border-white/40 px-4 py-2 transition-colors duration-150 ${
-      active ? 'bg-volt text-black border-volt' : 'text-zinc-300 hover:border-volt hover:text-volt'
+  const chipBtn = (active: boolean) =>
+    `rounded-lg border px-3.5 py-2 text-xs font-medium uppercase tracking-wide transition ${
+      active
+        ? 'border-teal-400 bg-teal-400 text-[#06110f]'
+        : 'border-white/10 text-slate-400 hover:border-teal-400/40 hover:text-teal-300'
     }`;
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] text-white" data-testid="lead-dashboard">
-      <div className="mx-auto max-w-7xl px-6 lg:px-10 py-12">
-        <p className="font-mono text-xs uppercase tracking-[0.3em] text-volt mb-3">{'// admin_panel'}</p>
-        <h1 className="font-display font-bold text-4xl sm:text-5xl uppercase tracking-tighter mb-10">
-          Lead_Dashboard
-        </h1>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 border border-white/20 mb-10">
-          {stats.map((s) => (
-            <div key={s.label} data-testid={`stat-${s.label.toLowerCase()}`}
-              className="border-r border-b lg:border-b-0 border-white/20 last:border-r-0 bg-[#121212] p-6">
-              <s.icon size={24} className={`${s.color} mb-4`} weight="duotone" />
-              <p className="font-mono text-3xl font-bold">{s.value}</p>
-              <p className="font-mono text-[10px] uppercase tracking-[0.25em] text-zinc-500 mt-1">{s.label}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="flex flex-wrap items-center gap-3 mb-6">
-          <button data-testid="dashboard-tab-leads" onClick={() => setTab('leads')} className={cliBtn(tab === 'leads')}>
-            [ LEADS ]
-          </button>
-          <button data-testid="dashboard-tab-bookings" onClick={() => setTab('bookings')} className={cliBtn(tab === 'bookings')}>
-            [ BOOKINGS ]
-          </button>
-          {tab === 'leads' && (
-            <>
-              <span className="font-mono text-xs text-zinc-500 ml-4 flex items-center gap-1"><Funnel size={14} /> filter:</span>
-              <button data-testid="filter-all" onClick={() => setFilter('all')} className={cliBtn(filter === 'all')}>ALL</button>
-              <button data-testid="filter-qualified" onClick={() => setFilter('true')} className={cliBtn(filter === 'true')}>QUALIFIED</button>
-              <button data-testid="filter-unqualified" onClick={() => setFilter('false')} className={cliBtn(filter === 'false')}>RAW</button>
-              <button data-testid="sort-toggle" onClick={() => setSortAsc(!sortAsc)} className={`${cliBtn(false)} flex items-center gap-1.5`}>
-                <ArrowsDownUp size={14} /> {sortAsc ? 'TERLAMA' : 'TERBARU'}
-              </button>
-            </>
-          )}
-        </div>
-
-        {error && (
-          <div data-testid="dashboard-error" className="border border-punch text-punch font-mono text-sm p-4 mb-6 flex items-center gap-2">
-            <WarningCircle size={18} /> {error} — pastikan kredensial Supabase sudah diisi di .env.local
+    <div data-testid="lead-dashboard">
+      {/* Stat cards */}
+      <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+        {stats.map((s) => (
+          <div
+            key={s.label}
+            data-testid={`stat-${s.label.toLowerCase().replace(/\s+/g, '-')}`}
+            className="rounded-2xl border border-white/6 bg-[#0b111d] p-5 shadow-[0_8px_24px_rgba(0,0,0,0.25)]"
+          >
+            <s.icon size={22} weight="duotone" className={`${s.color} mb-3`} />
+            <p className="text-2xl font-bold text-white">{s.value}</p>
+            <p className="mt-0.5 text-xs uppercase tracking-wide text-slate-500">{s.label}</p>
           </div>
+        ))}
+      </div>
+
+      {/* Tabs & filters */}
+      <div className="mt-6 flex flex-wrap items-center gap-2">
+        <button data-testid="dashboard-tab-leads" onClick={() => setTab('leads')} className={chipBtn(tab === 'leads')}>
+          Leads
+        </button>
+        <button data-testid="dashboard-tab-bookings" onClick={() => setTab('bookings')} className={chipBtn(tab === 'bookings')}>
+          Booking
+        </button>
+
+        {tab === 'leads' && (
+          <>
+            <span className="ml-3 flex items-center gap-1 text-xs text-slate-500">
+              <Funnel size={14} /> Filter:
+            </span>
+            <button data-testid="filter-all" onClick={() => setFilter('all')} className={chipBtn(filter === 'all')}>
+              Semua
+            </button>
+            <button data-testid="filter-qualified" onClick={() => setFilter('true')} className={chipBtn(filter === 'true')}>
+              Qualified
+            </button>
+            <button data-testid="filter-unqualified" onClick={() => setFilter('false')} className={chipBtn(filter === 'false')}>
+              Belum
+            </button>
+            <button
+              data-testid="sort-toggle"
+              onClick={() => setSortAsc(!sortAsc)}
+              className={`${chipBtn(false)} flex items-center gap-1.5`}
+            >
+              <ArrowsDownUp size={14} /> {sortAsc ? 'Terlama' : 'Terbaru'}
+            </button>
+          </>
         )}
+      </div>
 
-        {loading ? (
-          <div className="flex items-center gap-3 font-mono text-sm text-zinc-400 py-20 justify-center" data-testid="dashboard-loading">
-            <CircleNotch size={20} className="animate-spin text-volt" /> loading_data...
-          </div>
-        ) : tab === 'leads' ? (
-          <div className="overflow-x-auto border border-white/20" data-testid="leads-table">
-            <table className="w-full font-mono text-sm">
-              <thead>
-                <tr className="bg-[#121212] text-left">
-                  {['NAMA', 'DEVICE_INFO', 'BUDGET', 'STATUS', 'MASUK', 'AKSI'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-[10px] uppercase tracking-[0.25em] text-volt border-b border-r border-white/20 last:border-r-0">{h}</th>
-                  ))}
+      {error && (
+        <div
+          data-testid="dashboard-error"
+          className="mt-6 flex items-center gap-2 rounded-lg border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-300"
+        >
+          <WarningCircle size={18} /> {error} — pastikan kredensial Supabase sudah diisi di .env.local
+        </div>
+      )}
+
+      {loading ? (
+        <div
+          data-testid="dashboard-loading"
+          className="mt-10 flex items-center justify-center gap-2.5 py-16 text-sm text-slate-500"
+        >
+          <CircleNotch size={18} className="animate-spin text-teal-400" /> Memuat data...
+        </div>
+      ) : tab === 'leads' ? (
+        <div
+          data-testid="leads-table"
+          className="mt-6 overflow-x-auto rounded-2xl border border-white/6 bg-[#0b111d]"
+        >
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="bg-[#0f1826]">
+                {['Nama', 'Device', 'Budget', 'Status', 'Masuk', 'Aksi'].map((h) => (
+                  <th
+                    key={h}
+                    className="border-b border-white/6 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-teal-400/80"
+                  >
+                    {h}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {leads.length === 0 ? (
+                <tr>
+                  <td colSpan={6} data-testid="leads-empty" className="px-4 py-12 text-center text-slate-500">
+                    Belum ada leads — data dari chatbot akan muncul di sini.
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {leads.length === 0 ? (
-                  <tr><td colSpan={6} className="px-4 py-12 text-center text-zinc-500" data-testid="leads-empty">{'// belum ada leads — data dari chatbot akan muncul di sini'}</td></tr>
-                ) : leads.map((l) => (
-                  <tr key={l.id} className="hover:bg-white/5 transition-colors duration-150" data-testid={`lead-row-${l.id}`}>
-                    <td className="px-4 py-3 border-b border-r border-white/20 font-bold">{l.name}</td>
-                    <td className="px-4 py-3 border-b border-r border-white/20 text-zinc-400 text-xs max-w-xs truncate">
-                      {l.device_info && Object.keys(l.device_info).length ? Object.entries(l.device_info).map(([k, v]) => `${k}: ${v}`).join(' | ') : '—'}
+              ) : (
+                leads.map((l) => (
+                  <tr key={l.id} data-testid={`lead-row-${l.id}`} className="transition hover:bg-white/3">
+                    <td className="border-b border-white/6 px-4 py-3 font-medium text-white">{l.name}</td>
+                    <td className="max-w-xs truncate border-b border-white/6 px-4 py-3 text-xs text-slate-400">
+                      {l.device_info && Object.keys(l.device_info).length
+                        ? Object.entries(l.device_info)
+                            .map(([k, v]) => `${k}: ${v}`)
+                            .join(' | ')
+                        : '—'}
                     </td>
-                    <td className="px-4 py-3 border-b border-r border-white/20">{formatBudget(l.budget)}</td>
-                    <td className="px-4 py-3 border-b border-r border-white/20">
-                      <span className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1 ${l.qualified ? 'bg-volt text-black' : 'bg-white/10 text-zinc-400'}`}>
-                        {l.qualified ? 'QUALIFIED' : 'RAW'}
+                    <td className="border-b border-white/6 px-4 py-3 text-slate-300">{formatBudget(l.budget)}</td>
+                    <td className="border-b border-white/6 px-4 py-3">
+                      <span
+                        className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wide ${
+                          l.qualified
+                            ? 'border-teal-400/20 bg-teal-400/10 text-teal-300'
+                            : 'border-white/10 bg-white/5 text-slate-400'
+                        }`}
+                      >
+                        {l.qualified ? 'Qualified' : 'Belum'}
                       </span>
                     </td>
-                    <td className="px-4 py-3 border-b border-r border-white/20 text-zinc-400 text-xs">{formatDate(l.created_at)}</td>
-                    <td className="px-4 py-3 border-b border-white/20">
-                      <button data-testid={`toggle-qualified-${l.id}`} onClick={() => toggleQualified(l)}
-                        className="text-[10px] font-bold uppercase tracking-widest border border-white/40 px-2 py-1 hover:bg-volt hover:text-black hover:border-volt transition-colors duration-150">
-                        {l.qualified ? 'UNMARK' : 'MARK ✓'}
+                    <td className="border-b border-white/6 px-4 py-3 text-xs text-slate-500">
+                      {formatDate(l.created_at)}
+                    </td>
+                    <td className="border-b border-white/6 px-4 py-3">
+                      <button
+                        data-testid={`toggle-qualified-${l.id}`}
+                        onClick={() => toggleQualified(l)}
+                        className="rounded-lg border border-white/10 px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide text-slate-300 transition hover:border-teal-400/40 hover:text-teal-300"
+                      >
+                        {l.qualified ? 'Batalkan' : 'Tandai ✓'}
                       </button>
                     </td>
                   </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div
+          data-testid="bookings-table"
+          className="mt-6 overflow-x-auto rounded-2xl border border-white/6 bg-[#0b111d]"
+        >
+          <table className="w-full text-left text-sm">
+            <thead>
+              <tr className="bg-[#0f1826]">
+                {['Customer', 'Servis', 'Jadwal', 'Deskripsi', 'Status'].map((h) => (
+                  <th
+                    key={h}
+                    className="border-b border-white/6 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-teal-400/80"
+                  >
+                    {h}
+                  </th>
                 ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="overflow-x-auto border border-white/20" data-testid="bookings-table">
-            <table className="w-full font-mono text-sm">
-              <thead>
-                <tr className="bg-[#121212] text-left">
-                  {['CUSTOMER', 'SERVIS', 'JADWAL', 'DESKRIPSI', 'STATUS'].map((h) => (
-                    <th key={h} className="px-4 py-3 text-[10px] uppercase tracking-[0.25em] text-volt border-b border-r border-white/20 last:border-r-0">{h}</th>
-                  ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bookings.length === 0 ? (
+                <tr>
+                  <td colSpan={5} data-testid="bookings-empty" className="px-4 py-12 text-center text-slate-500">
+                    Belum ada booking.
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {bookings.length === 0 ? (
-                  <tr><td colSpan={5} className="px-4 py-12 text-center text-zinc-500" data-testid="bookings-empty">{'// belum ada booking'}</td></tr>
-                ) : bookings.map((b) => (
-                  <tr key={b.id} className="hover:bg-white/5 transition-colors duration-150" data-testid={`booking-row-${b.id}`}>
-                    <td className="px-4 py-3 border-b border-r border-white/20">
-                      <span className="font-bold">{b.customers?.name || '—'}</span>
-                      <span className="block text-xs text-zinc-500">{b.customers?.phone}</span>
+              ) : (
+                bookings.map((b) => (
+                  <tr key={b.id} data-testid={`booking-row-${b.id}`} className="transition hover:bg-white/3">
+                    <td className="border-b border-white/6 px-4 py-3">
+                      <span className="font-medium text-white">{b.customers?.name || '—'}</span>
+                      <span className="block text-xs text-slate-500">{b.customers?.phone}</span>
                     </td>
-                    <td className="px-4 py-3 border-b border-r border-white/20">{b.service_type}</td>
-                    <td className="px-4 py-3 border-b border-r border-white/20 text-zinc-400 text-xs">{formatDate(b.scheduled_date)}</td>
-                    <td className="px-4 py-3 border-b border-r border-white/20 text-zinc-400 text-xs max-w-xs truncate">{b.description || '—'}</td>
-                    <td className="px-4 py-3 border-b border-white/20">
-                      <select data-testid={`booking-status-select-${b.id}`} value={b.status}
+                    <td className="border-b border-white/6 px-4 py-3 text-slate-300">{b.service_type}</td>
+                    <td className="border-b border-white/6 px-4 py-3 text-xs text-slate-500">
+                      {formatDate(b.scheduled_date)}
+                    </td>
+                    <td className="max-w-xs truncate border-b border-white/6 px-4 py-3 text-xs text-slate-400">
+                      {b.description || '—'}
+                    </td>
+                    <td className="border-b border-white/6 px-4 py-3">
+                      <select
+                        data-testid={`booking-status-select-${b.id}`}
+                        value={b.status}
                         onChange={(e) => updateStatus(b.id, e.target.value)}
-                        className={`text-[10px] font-bold uppercase tracking-widest px-2 py-1.5 border-0 outline-none cursor-pointer ${STATUS_COLORS[b.status] || 'bg-white/10'}`}>
-                        {['pending', 'confirmed', 'completed', 'cancelled'].map((s) => <option key={s} value={s}>{s.toUpperCase()}</option>)}
+                        className={`cursor-pointer rounded-lg border px-2.5 py-1.5 text-[10px] font-semibold uppercase tracking-wide outline-none ${
+                          BOOKING_STATUS_STYLES[b.status] || 'border-white/10 bg-white/5 text-slate-300'
+                        }`}
+                      >
+                        {['pending', 'confirmed', 'completed', 'cancelled'].map((s) => (
+                          <option key={s} value={s} className="bg-[#0b111d] text-white">
+                            {s}
+                          </option>
+                        ))}
                       </select>
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 };
-

@@ -1,58 +1,34 @@
 import Link from 'next/link';
 import { LeadDashboard } from '@/app/components/LeadDashboard';
-import { getSupabase } from '@/lib/supabase';
 
-// ...
-
-async function getLeadStats() {
-  const supabase = getSupabase();
-  const { count: total } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true });
-
-  const { count: qualified } = await supabase
-    .from('leads')
-    .select('*', { count: 'exact', head: true })
-    .eq('qualified', true);
-
-  return { total: total ?? 0, qualified: qualified ?? 0 };
-}
-
-export default async function DashboardPage() {
-  const stats = await getLeadStats();
-
+export default function DashboardPage() {
   return (
-    <div className="min-h-screen bg-slate-100 px-4 py-10">
-      <div className="mx-auto max-w-6xl">
+    <div className="min-h-screen bg-[#060a13] px-4 py-10 sm:px-6">
+      <div className="mx-auto max-w-7xl">
         <div className="flex items-center justify-between">
-          <Link href="/" className="text-xs font-medium text-navy-400 hover:text-navy-600">
+          <Link
+            href="/"
+            className="text-xs font-medium text-slate-500 transition hover:text-slate-300"
+          >
             ← Kembali ke Beranda
           </Link>
-          <a href="/api/admin/logout" className="text-xs font-medium text-navy-400 hover:text-navy-600">
-            Logout →
+          <a
+            href="/api/admin/logout"
+            className="text-xs font-medium text-slate-500 transition hover:text-red-300"
+          >
+            Keluar →
           </a>
         </div>
-        <h1 className="mt-1 text-2xl font-bold text-navy-900">Dashboard Leads</h1>
-        <p className="mt-1 text-sm text-navy-600">
-          Pantau leads yang masuk dari chatbot & booking.
+
+        <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-teal-400">
+          Admin Panel
+        </p>
+        <h1 className="mt-1 text-2xl font-bold text-white sm:text-3xl">Dashboard</h1>
+        <p className="mt-1 text-sm text-slate-500">
+          Pantau leads dari chatbot & booking servis yang masuk.
         </p>
 
-        <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3">
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium text-navy-500">Total Leads</p>
-            <p className="mt-1 text-2xl font-bold text-navy-900">{stats.total}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium text-navy-500">Qualified</p>
-            <p className="mt-1 text-2xl font-bold text-amber-600">{stats.qualified}</p>
-          </div>
-          <div className="rounded-lg border border-slate-200 bg-white p-4">
-            <p className="text-xs font-medium text-navy-500">Belum Qualified</p>
-            <p className="mt-1 text-2xl font-bold text-navy-600">{stats.total - stats.qualified}</p>
-          </div>
-        </div>
-
-        <div className="mt-6">
+        <div className="mt-8">
           <LeadDashboard />
         </div>
       </div>

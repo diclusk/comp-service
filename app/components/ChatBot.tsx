@@ -4,6 +4,8 @@ import type { ChatMessage } from "@/lib/types";
 
 type Message = ChatMessage;
 
+const MAX_AI_TURNS = 3;
+
 export default function ChatBot() {
   const [messages, setMessages] = useState<Message[]>([
     {
@@ -13,16 +15,33 @@ export default function ChatBot() {
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [handedOff, setHandedOff] = useState(false);
 
   const handleSend = async () => {
-    if (!input.trim()) return;
+    if (!input.trim() || handedOff) return;
 
     const userMessage: Message = { role: "user", content: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput("");
-    setLoading(true);
 
+    const turnsAfterThis = newMessages.filter((m) => m.role === "user").length;
+
+    // Batas tercapai di pesan ini — jangan panggil AI lagi, langsung alihkan.
+    if (turnsAfterThis >= MAX_AI_TURNS) {
+      setMessages([
+        ...newMessages,
+        {
+          role: "assistant",
+          content:
+            "Terima kasih sudah menjelaskan detailnya! 🙏 Untuk penanganan lebih lanjut, chat ini akan diteruskan ke tim CS kami — mereka akan segera membalas di sini.",
+        },
+      ]);
+      setHandedOff(true);
+      return;
+    }
+
+    setLoading(true);
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -81,6 +100,13 @@ export default function ChatBot() {
             </div>
           </div>
         )}
+        {handedOff && (
+          <div className="flex justify-center">
+            <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+              Menunggu balasan tim CS...
+            </div>
+          </div>
+        )}
       </div>
 
       <div className="flex gap-2">
@@ -89,13 +115,13 @@ export default function ChatBot() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && handleSend()}
-          placeholder="Ketik pesan..."
-          className="flex-1 border rounded-lg px-3 py-2"
-          disabled={loading}
+          placeholder={handedOff ? "Menunggu tim CS..." : "Ketik pesan..."}
+          className="flex-1 border rounded-lg px-3 py-2 disabled:opacity-50 disabled:bg-gray-50"
+          disabled={loading || handedOff}
         />
         <button
           onClick={handleSend}
-          disabled={loading}
+          disabled={loading || handedOff}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
         >
           {loading ? "..." : "Kirim"}
@@ -104,4 +130,3 @@ export default function ChatBot() {
     </div>
   );
 }
-

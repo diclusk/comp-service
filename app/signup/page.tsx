@@ -3,8 +3,10 @@
 import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import BorderGlow from '@/app/components/BorderGlow';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
 
-export default function SignupPage() {
+export default function RegisterPage() {
   const router = useRouter();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -12,24 +14,22 @@ export default function SignupPage() {
   const [error, setError] = useState('');
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
 
-  async function handleSubmit(e: FormEvent) {
+  const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
     try {
-      const res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      });
+      const supabase = getSupabaseBrowser();
+      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
 
-      const body = await res.json().catch(() => null);
-      if (!res.ok) {
-        throw new Error(body?.error || 'Gagal mendaftar');
+      if (signUpError) {
+        throw new Error(signUpError.message);
       }
 
-      if (body?.needsEmailConfirmation) {
+      // Kalau email confirmation aktif di project Supabase, session di sini masih
+      // null sampai user klik link verifikasi.
+      if (!data.session) {
         setNeedsConfirmation(true);
         return;
       }
@@ -41,81 +41,123 @@ export default function SignupPage() {
     } finally {
       setLoading(false);
     }
-  }
+  };
 
   if (needsConfirmation) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-        <div className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 text-center shadow-sm">
-          <h1 className="text-lg font-semibold text-navy-900">Cek email kamu</h1>
-          <p className="mt-2 text-sm text-navy-600">
-            Kami sudah kirim link konfirmasi ke <span className="font-medium">{email}</span>.
-            Klik link itu dulu sebelum login.
-          </p>
-          <Link
-            href="/login"
-            className="mt-5 inline-block rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700"
+      <main className="min-h-screen bg-[#060a13] flex items-center justify-center px-4 py-24">
+        <div className="relative w-full max-w-md">
+          <BorderGlow
+            edgeSensitivity={40}
+            glowColor="14 184 166"
+            backgroundColor="#071225"
+            borderRadius={16}
+            glowRadius={20}
+            glowIntensity={0.8}
+            coneSpread={30}
+            animated={true}
+            fillOpacity={0.15}
+            className="p-0.5"
           >
-            Ke Halaman Login
-          </Link>
+            <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 text-center shadow-2xl shadow-black/40">
+              <h1 className="text-2xl font-bold text-white">Cek email kamu</h1>
+              <p className="mt-2 text-sm text-slate-400">
+                Kami sudah kirim link konfirmasi ke{' '}
+                <span className="font-medium text-slate-200">{email}</span>. Klik link itu dulu
+                sebelum login.
+              </p>
+              <Link
+                href="/login"
+                className="mt-6 inline-block rounded-lg bg-teal-400 px-4 py-2.5 text-sm font-semibold text-[#06110f] transition hover:bg-teal-300"
+              >
+                Ke Halaman Login
+              </Link>
+            </div>
+          </BorderGlow>
         </div>
-      </div>
+      </main>
     );
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-slate-100 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-lg border border-slate-200 bg-white p-6 shadow-sm"
-      >
-        <h1 className="text-lg font-semibold text-navy-900">Daftar Akun</h1>
-        <p className="mt-1 text-sm text-navy-500">
-          Riwayat booking kamu tersimpan selamanya selama akun masih ada.
-        </p>
-
-        <label className="mt-6 block text-xs font-medium text-navy-600">Email</label>
-        <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          autoFocus
-          required
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
-        />
-
-        <label className="mt-4 block text-xs font-medium text-navy-600">Password</label>
-        <input
-          type="password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-          minLength={8}
-          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
-        />
-        <p className="mt-1 text-xs text-navy-400">Minimal 8 karakter.</p>
-
-        {error && (
-          <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-            {error}
-          </div>
-        )}
-
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-5 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700 disabled:cursor-not-allowed disabled:opacity-60"
+    <main className="min-h-screen bg-[#060a13] flex items-center justify-center px-4 py-24">
+      <div className="relative w-full max-w-md">
+        <BorderGlow
+          edgeSensitivity={40}
+          glowColor="14 184 166"
+          backgroundColor="#071225"
+          borderRadius={16}
+          glowRadius={20}
+          glowIntensity={0.8}
+          coneSpread={30}
+          animated={true}
+          fillOpacity={0.15}
+          className="p-0.5"
         >
-          {loading ? 'Memproses...' : 'Daftar'}
-        </button>
+          {/* card */}
+          <div className="relative rounded-2xl bg-[#0b111d] border border-white/6 px-8 py-10 shadow-2xl shadow-black/40">
+          <h1 className="text-2xl font-bold text-white">Daftar Akun</h1>
+          <p className="mt-1 text-sm text-slate-400">
+            Riwayat booking kamu tersimpan selamanya selama akun masih ada.
+          </p>
 
-        <p className="mt-4 text-center text-xs text-navy-500">
-          Sudah punya akun?{' '}
-          <Link href="/login" className="font-medium text-navy-900 hover:underline">
-            Masuk
-          </Link>
-        </p>
-      </form>
-    </div>
+          <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+            <div>
+              <label htmlFor="email" className="block text-sm font-medium text-slate-300">
+                Email
+              </label>
+              <input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="mt-1.5 w-full rounded-lg bg-[#0f1826] border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-teal-400/60 focus:ring-2 focus:ring-teal-400/20"
+                placeholder="nama@email.com"
+              />
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-medium text-slate-300">
+                Password
+              </label>
+              <input
+                id="password"
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={8}
+                className="mt-1.5 w-full rounded-lg bg-[#0f1826] border border-white/10 px-3.5 py-2.5 text-sm text-white placeholder:text-slate-500 outline-none transition focus:border-teal-400/60 focus:ring-2 focus:ring-teal-400/20"
+                placeholder="••••••••••"
+              />
+              <p className="mt-1.5 text-xs text-slate-500">Minimal 8 karakter.</p>
+            </div>
+
+            {error && (
+              <div className="rounded-lg border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-300">
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full rounded-lg bg-teal-400 py-2.5 text-sm font-semibold text-[#06110f] transition hover:bg-teal-300 disabled:opacity-60"
+            >
+              {loading ? 'Memproses...' : 'Daftar'}
+            </button>
+          </form>
+
+          <p className="mt-6 text-center text-sm text-slate-500">
+            Sudah punya akun?{' '}
+            <Link href="/login" className="text-teal-400 hover:text-teal-300 font-medium">
+              Masuk
+            </Link>
+          </p>
+        </div>
+          </BorderGlow>
+        </div>
+    </main>
   );
 }

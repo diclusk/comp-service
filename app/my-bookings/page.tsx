@@ -2,7 +2,6 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { getGuestSessionId } from '@/lib/Guestsession';
 import { formatDate } from '@/lib/utils';
 import type { Booking } from '@/lib/types';
 
@@ -20,34 +19,20 @@ const STATUS_COLORS: Record<string, string> = {
   cancelled: 'bg-red-50 text-red-700',
 };
 
-export default function GuestBookingHistoryPage() {
+export default function MyBookingsPage() {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [hasSession, setHasSession] = useState(true);
 
   useEffect(() => {
-    async function run() {
-      const sessionId = getGuestSessionId();
-      if (!sessionId) {
-        setHasSession(false);
-        setLoading(false);
-        return;
-      }
-
-      try {
-        const res = await fetch(`/api/bookings/guest?session_id=${sessionId}`);
+    fetch('/api/bookings/mine')
+      .then(async (res) => {
         const body = await res.json();
         if (!res.ok) throw new Error(body.error || 'Gagal memuat data');
         setBookings(body.bookings || []);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
-      } finally {
-        setLoading(false);
-      }
-    }
-
-    run();
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : 'Terjadi kesalahan'))
+      .finally(() => setLoading(false));
   }, []);
 
   return (
@@ -55,33 +40,15 @@ export default function GuestBookingHistoryPage() {
       <div className="mx-auto max-w-3xl">
         <div className="mb-8">
           <span className="text-xs font-medium uppercase tracking-wide text-teal-700">
-            Booking Tanpa Akun
+            Riwayat Akun
           </span>
-          <h1 className="mt-2 text-2xl font-semibold text-slate-900">Riwayat Booking Sesi Ini</h1>
+          <h1 className="mt-2 text-2xl font-semibold text-slate-900">Riwayat Booking Saya</h1>
           <p className="mt-1 text-sm text-slate-500">
-            Riwayat ini hanya berlaku selama tab ini terbuka. Ingin riwayat tersimpan permanen?{' '}
-            <Link href="/signup" className="font-medium text-teal-700 hover:underline">
-              Buat akun
-            </Link>
-            .
+            Riwayat ini tersimpan permanen selama akun kamu masih ada.
           </p>
         </div>
 
         {loading && <p className="text-sm text-slate-500">Memuat...</p>}
-
-        {!loading && !hasSession && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-            <p className="text-sm text-slate-600">
-              Belum ada booking di sesi ini. Tab baru = riwayat kosong.
-            </p>
-            <Link
-              href="/booking"
-              className="mt-4 inline-block rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700"
-            >
-              Buat Booking
-            </Link>
-          </div>
-        )}
 
         {!loading && error && (
           <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
@@ -89,9 +56,15 @@ export default function GuestBookingHistoryPage() {
           </div>
         )}
 
-        {!loading && hasSession && !error && bookings.length === 0 && (
+        {!loading && !error && bookings.length === 0 && (
           <div className="rounded-2xl border border-slate-200 bg-white p-8 text-center">
-            <p className="text-sm text-slate-600">Belum ada booking di sesi ini.</p>
+            <p className="text-sm text-slate-600">Kamu belum punya booking.</p>
+            <Link
+              href="/booking"
+              className="mt-4 inline-block rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700"
+            >
+              Buat Booking
+            </Link>
           </div>
         )}
 

@@ -4,6 +4,13 @@ import type { ChatMessage } from '@/lib/types';
 
 const SYSTEM_PROMPT = `Anda adalah support technician profesional untuk toko servis komputer terpercaya.
 
+ATURAN PANJANG JAWABAN (PENTING — demi hemat biaya API, GAPUNYA DUIT COYYY ;-;):
+- Jawab SESINGKAT dan SESEPERLUNYA mungkin. Jangan bertele-tele.
+- Maksimal 2-4 kalimat pendek per balasan, kecuali user minta penjelasan detail.
+- Kalau nanya sesuatu ke user, tanya SATU hal per balasan — jangan borongan banyak pertanyaan sekaligus.
+- Jangan mengulang apa yang user sudah bilang. Jangan basa-basi pembuka/penutup panjang.
+- Skip empati berlebihan ("saya paham betul perasaan Anda...") — cukup langsung ke solusi/pertanyaan berikutnya.
+
 KARAKTERISTIK:
 - Bahasa: Bahasa Indonesia casual tapi profesional
 - Tone: Helpful, empathetic, efficient
@@ -119,4 +126,3 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
-

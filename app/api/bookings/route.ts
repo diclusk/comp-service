@@ -70,6 +70,23 @@ export async function POST(req: NextRequest) {
     const customerPayload: Record<string, unknown> = { name, phone, email };
     if (user) {
       customerPayload.user_id = user.id;
+
+      // Nomor telepon punya UNIQUE constraint. Kalau nomor ini sudah terdaftar
+      // untuk user lain (bukan guest, bukan akun ini sendiri), upsert onConflict
+      // 'phone' di bawah akan diam-diam memindahkan data customer itu ke akun
+      // yang sedang login — jangan izinkan.
+      const { data: existing } = await supabase
+        .from('customers')
+        .select('user_id')
+        .eq('phone', phone)
+        .maybeSingle();
+
+      if (existing?.user_id && existing.user_id !== user.id) {
+        return NextResponse.json(
+          { error: 'Nomor telepon ini sudah terdaftar di akun lain' },
+          { status: 409 }
+        );
+      }
     }
 
     const { data: customer, error: customerError } = await supabase
