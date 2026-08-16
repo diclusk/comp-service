@@ -1,7 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getSupabase } from '@/lib/supabase';
+import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
+import { saveLead } from '@/lib/leads';
+
+// GET & PATCH di bawah ini data pribadi semua lead (nama, telepon, email, budget) —
+// harus admin-only, sama kayak bookings/route.ts. POST tetap publik karena dipanggil
+// chatbot (belum ada auth customer di titik itu).
+async function requireAdmin(req: NextRequest): Promise<boolean> {
+  const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
+  return verifySessionToken(token);
+}
 
 export async function GET(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const supabase = getSupabase();
     const { searchParams } = new URL(req.url);
@@ -40,71 +54,27 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// Create a lead (used by chatbot qualifying flow)
+// Create/update a lead (dipakai manual/dashboard; chatbot sekarang manggil
+// saveLead() langsung dari app/api/chat/route.ts, bukan lewat endpoint ini)
 export async function POST(req: NextRequest) {
   try {
-    const supabase = getSupabase();
     const body = await req.json();
-    const { name, phone, email, device_info, budget, qualified } = body;
-
-    if (!name || !phone) {
-      return NextResponse.json(
-        { error: 'name dan phone wajib diisi' },
-        { status: 400 }
-      );
-    }
-
-    const { data: existing } = await supabase
-      .from('leads')
-      .select('*')
-      .eq('phone', phone)
-      .maybeSingle();
-
-    if (existing) {
-      const { data, error } = await supabase
-        .from('leads')
-        .update({
-          name: name || existing.name,
-          email: email ?? existing.email,
-          device_info: device_info ?? existing.device_info,
-          budget: budget ?? existing.budget,
-          qualified: qualified ?? existing.qualified,
-          updated_at: new Date().toISOString(),
-        })
-        .eq('id', existing.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      return NextResponse.json({ lead: data, created: false });
-    }
-
-    const { data, error } = await supabase
-      .from('leads')
-      .insert([
-        {
-          name,
-          phone,
-          email: email || null,
-          device_info: device_info || null,
-          budget: budget ?? null,
-          qualified: qualified ?? false,
-          created_at: new Date().toISOString(),
-        },
-      ])
-      .select()
-      .single();
-
-    if (error) throw error;
-    return NextResponse.json({ lead: data, created: true }, { status: 201 });
+    const result = await saveLead(body);
+    return NextResponse.json(result, { status: result.created ? 201 : 200 });
   } catch (error) {
+    const message = error instanceof Error ? error.message : 'Failed to create/update lead';
+    const status = message === 'name dan phone wajib diisi' ? 400 : 500;
     console.error('Lead create error:', error);
-    return NextResponse.json({ error: 'Failed to create/update lead' }, { status: 500 });
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 // Toggle qualified (used by dashboard)
 export async function PATCH(req: NextRequest) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
   try {
     const supabase = getSupabase();
     const body = await req.json();

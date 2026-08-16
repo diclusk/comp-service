@@ -1,6 +1,30 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { streamChat } from '@/lib/openrouter';
+import { saveLead } from '@/lib/leads';
 import type { ChatMessage } from '@/lib/types';
+
+const SAVE_LEAD_RE = /\[SAVE_LEAD\]([\s\S]*?)\[\/SAVE_LEAD\]/;
+
+// Cabut block [SAVE_LEAD]{...}[/SAVE_LEAD] dari balasan AI: simpan lead-nya ke DB
+// (best-effort, gagal simpan tidak boleh gagalin balasan ke customer), lalu
+// kembalikan teks yang sudah bersih buat ditampilkan ke customer.
+async function extractAndSaveLead(content: string): Promise<string> {
+  const match = content.match(SAVE_LEAD_RE);
+  if (!match) return content;
+
+  const cleaned = content.replace(SAVE_LEAD_RE, '').trim();
+
+  try {
+    const parsed = JSON.parse(match[1]);
+    if (parsed?.name && parsed?.phone) {
+      await saveLead(parsed);
+    }
+  } catch (err) {
+    console.error('SAVE_LEAD parse/save error:', err);
+  }
+
+  return cleaned;
+}
 
 const SYSTEM_PROMPT = `Anda adalah support technician profesional untuk toko servis komputer terpercaya.
 
@@ -39,14 +63,24 @@ PROSES KOMUNIKASI:
    - Jangan terlalu teknis di awal
 
 3. LEAD QUALIFICATION (As conversation progresses)
-   Collect info:
+   Collect info (satu per satu, jangan borongan):
    - Urgency: "Ini perlu cepat? Kapan bisa diambil?"
    - Budget: "Ada budget estimate berapa?"
    - Type: "Ini bisa DIY atau perlu ke toko?"
+   - Nama & nomor telepon customer (WAJIB ditanya sebelum booking offer, supaya tim bisa follow-up): "Boleh minta nama dan nomor WA/telepon untuk kami hubungi?"
 
 4. BOOKING OFFER (When ready)
    - "Kita bisa booking appointment hari [hari]. Jam berapa Anda bisa datang?"
    - Atau: "Kami buka hari Senin-Jumat 09:00-18:00, Sabtu 10:00-15:00"
+
+5. SAVE LEAD (Internal, invisible ke customer — WAJIB dilakukan)
+   Begitu Anda sudah punya MINIMAL nama + nomor telepon (device/masalah/budget boleh
+   menyusul, isi apa yang sudah didapat), tambahkan SATU baris block ini di PALING
+   BAWAH balasan Anda, SETELAH kalimat normal untuk customer. Block ini tidak akan
+   dilihat customer, jadi jangan sebut/jelaskan block ini ke customer:
+   [SAVE_LEAD]{"name":"...","phone":"...","email":null,"device_info":{"description":"ringkasan device+masalah"},"budget":angka_atau_null,"qualified":true_jika_diagnosis+budget_sudah_dibahas}[/SAVE_LEAD]
+   Update block ini lagi (ulang dengan data terbaru) tiap kali ada info baru yang
+   didapat sepanjang percakapan — bukan cuma sekali di awal.
 
 LAYANAN KAMI:
 - Hardware Repair: Hardisk, RAM, motherboard, power supply
@@ -119,6 +153,10 @@ export async function POST(req: NextRequest) {
         { status: 502 }
       );
     }
+
+    data.choices[0].message.content = await extractAndSaveLead(
+      data.choices[0].message.content
+    );
 
     return NextResponse.json(data);
   } catch (error) {
