@@ -78,14 +78,14 @@ export default function Navbar() {
             className="font-mono text-lg font-bold tracking-tight transition-opacity group-hover:opacity-80"
             style={{ color: ACCENT }}
           >
-            [FK]
+            [ZCS]
           </span>
           <div className="hidden leading-none sm:block">
             <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-white">
               Servis<span style={{ color: ACCENT }}>.</span>Komputer
             </div>
-            <div className="mt-1 font-mono text-[9px] uppercase tracking-[0.15em] text-slate-500">
-              Cepat // Profesional // Terpercaya
+            <div className="mt-1 font-mono text-[12px] uppercase tracking-[0.15em] text-slate-500">
+              Mudah // Aman // Terpercaya
             </div>
           </div>
         </Link>
@@ -131,11 +131,10 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* CTA utama — satu-satunya elemen berisi (filled), sisanya outline */}
+          {/* CTA utama — outline seperti Login secara default, isi solid pas hover */}
           <Link
             href="/booking"
-            className="hidden h-9 items-center px-4 font-mono text-xs font-semibold uppercase tracking-wider text-navy-900 transition hover:brightness-110 sm:inline-flex"
-            style={{ backgroundColor: ACCENT }}
+            className="hidden h-9 items-center border border-[#7C99B3] px-4 font-mono text-xs font-semibold uppercase tracking-wider text-[#7C99B3] transition-colors duration-150 hover:bg-[#7C99B3] hover:text-navy-900 sm:inline-flex"
           >
             Booking Sekarang ›
           </Link>
@@ -198,8 +197,7 @@ export default function Navbar() {
             <Link
               href="/booking"
               onClick={() => setIsOpen(false)}
-              className="mt-2 flex items-center justify-center px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-wider text-navy-900"
-              style={{ backgroundColor: ACCENT }}
+              className="mt-2 flex items-center justify-center border border-[#7C99B3] px-4 py-2.5 font-mono text-xs font-semibold uppercase tracking-wider text-[#7C99B3] transition-colors duration-150 hover:bg-[#7C99B3] hover:text-navy-900"
             >
               Booking Sekarang ›
             </Link>

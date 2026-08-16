@@ -1,11 +1,7 @@
 @import "tailwindcss";
 @config "../tailwind.config.js";
 
-/* ============================================================
-   DESIGN TOKENS — dibutuhkan oleh komponen (jangan dihapus
-   sebelum kamu mengganti styling pada komponennya).
-   Silakan modifikasi sesuai selera desainmu sendiri.
-   ============================================================ */
+
 @theme {
   --color-volt: #ccff00;
   --color-punch: #ff007f;
@@ -17,7 +13,7 @@
 
 }
 
-/* Utility class yang dipakai komponen (btn-brutal, input-brutal). */
+
 @layer components {
   
 }
@@ -35,6 +31,11 @@
   flex-direction: column;
   justify-content: center;
   align-items: center;
+}
+
+
+html {
+  font-size: clamp(16px, 0.7vw + 9px, 20px);
 }
 
 html, body {
@@ -62,4 +63,3 @@ body {
   color: var(--ink);
   font-family: 'Inter', sans-serif;
 }
-

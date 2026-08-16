@@ -62,6 +62,9 @@ export default function HeroVisual() {
       <div className="absolute inset-10 animate-[spin_14s_linear_infinite]">
         <span className="absolute top-0 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-cyan-300 shadow-[0_0_12px_4px_rgba(34,211,238,0.6)]" />
       </div>
+      <div className="absolute inset-10 animate-[spin_10s_linear_infinite]">
+        <span className="absolute top-12 left-1/2 h-2 w-2 -translate-x-1/2 rounded-full bg-cyan-300 shadow-[0_0_12px_4px_rgba(34,211,238,0.6)]" />
+      </div>
 
       {/* product image */}
       <motion.div

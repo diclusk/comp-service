@@ -4,8 +4,6 @@ import HeroVisual from './components/HeroVisual';
 import HomeSections, { type IconKey } from './components/HomeSections';
 import StatusBadge from './components/StatusBadge';
 import {
-  IconMessage,
-  IconCalendar,
   IconCpu,
   IconHeadset,
   IconArrowRight,
@@ -81,9 +79,10 @@ export default function Home() {
       {/* Hero */}
       <section className="relative isolate overflow-hidden bg-linear-to-b from-[#050B18] via-navy-900 to-navy-900">
         {/* Ambient background layers */}
-        <div className="pointer-events-none absolute inset-0 background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.06)_1px,transparent_0) background-size:32px_32px opacity-40" />
-        <div className="pointer-events-none absolute -top-32 right-[-10%] h-28rem w-28rem rounded-full bg-blue-600/25 blur-[110px]" />
-        <div className="pointer-events-none absolute top-1/2 left-[-10%] h-80 w-80 rounded-full bg-cyan-500/10 blur-[100px]" />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-40"
+          style={{ backgroundImage: 'radial-gradient(#7C99B355 1px, transparent 1px)', backgroundSize: '32px 32px' }}
+        />
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-linear-to-t from-navy-900 to-transparent" />
 
         <div className="relative mx-auto grid max-w-7xl gap-12 px-6 pt-16 pb-28 sm:pt-20 lg:grid-cols-2 lg:items-center lg:gap-8 lg:pt-24 lg:pb-36">
@@ -109,20 +108,27 @@ export default function Home() {
               sisanya.
             </p>
 
-            <div className="mt-9 flex flex-col gap-4 sm:flex-row">
+            <div className="relative mt-6 flex flex-col gap-4 p-2 sm:flex-row">
+              {/* Corner ticks */}
+              <span className="pointer-events-none absolute -left-0.5 -top-0.5 h-2 w-2 border-l border-t border-white/20" />
+              <span className="pointer-events-none absolute -right-0.5 -top-0.5 h-2 w-2 border-r border-t border-white/20" />
+              <span className="pointer-events-none absolute -bottom-0.5 -left-0.5 h-2 w-2 border-b border-l border-white/20" />
+              <span className="pointer-events-none absolute -bottom-0.5 -right-0.5 h-2 w-2 border-b border-r border-white/20" />
+
+              {/* Solid border = tindakan final (booking). Dashed = tindakan awal/eksploratif (tanya dulu). */}
               <Link
                 href="/booking"
-                className="group relative inline-flex items-center justify-center gap-2 overflow-hidden rounded-lg bg-blue-600 px-6 py-3 text-sm font-medium text-white shadow-lg shadow-blue-600/25 transition-all duration-300 hover:-translate-y-0.5 hover:bg-blue-500 hover:shadow-xl hover:shadow-blue-500/30 active:translate-y-0"
+                className="group inline-flex items-center justify-center gap-2.5 border border-[#7C99B3] bg-[#7C99B3] px-6 py-3 font-mono text-sm font-semibold tracking-wide text-navy-900 transition-colors duration-150 hover:border-white hover:bg-white"
               >
-                <IconCalendar className="h-4 w-4" />
+                <span className="opacity-50"></span>
                 Booking Servis Sekarang
-                <span className="absolute inset-0 -translate-x-full bg-linear-to-r from-transparent via-white/20 to-transparent transition-transform duration-700 group-hover:translate-x-full" />
+                <IconArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-1" />
               </Link>
               <Link
                 href="/#chatbot"
-                className="inline-flex items-center justify-center gap-2 rounded-lg border border-white/15 bg-white/5 px-6 py-3 text-sm font-medium text-white backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-white/30 hover:bg-white/10"
+                className="group inline-flex items-center justify-center gap-2.5 border border-dashed border-white/25 px-6 py-3 font-mono text-sm text-white transition-colors duration-150 hover:border-[#7C99B3] hover:text-[#7C99B3]"
               >
-                <IconMessage className="h-4 w-4" />
+                <span className="text-[#7C99B3] group-hover:text-current">&gt;_</span>
                 Tanya AI Dulu
               </Link>
             </div>
@@ -157,12 +163,14 @@ export default function Home() {
         {/* CTA Banner */}
         <section className="px-6 pb-20">
           <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl bg-navy-900">
-            <div className="pointer-events-none absolute inset-0 background-image:radial-gradient(circle_at_1px_1px,rgba(255,255,255,0.05)_1px,transparent_0) background-size:28px_28px" />
-            <div className="pointer-events-none absolute -top-10 right-10 h-64 w-64 rounded-full bg-blue-500/20 blur-[100px]" />
+            <div
+              className="pointer-events-none absolute inset-0"
+              style={{ backgroundImage: 'radial-gradient(#7C99B340 1px, transparent 1px)', backgroundSize: '28px 28px' }}
+            />
 
             <div className="relative grid gap-8 p-8 sm:p-10 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:gap-0">
               <div>
-                <div className="flex h-14 w-14 items-center justify-center rounded-full border border-blue-400/30 bg-blue-500/10 text-blue-300 shadow-[0_0_30px_-6px_rgba(59,130,246,0.6)]">
+                <div className="flex h-14 w-14 items-center justify-center border border-[#7C99B3]/40 text-[#7C99B3]">
                   <IconHeadset className="h-6 w-6" />
                 </div>
                 <h2 className="mt-5 text-xl font-bold text-white sm:text-2xl">
@@ -173,11 +181,11 @@ export default function Home() {
                 </p>
                 <Link
                   href="/booking"
-                  className="group mt-6 inline-flex items-center gap-2 rounded-lg bg-white px-6 py-3 text-sm font-medium text-navy-900 transition-all duration-300 hover:-translate-y-0.5 hover:bg-slate-100 hover:shadow-xl hover:shadow-white/10"
+                  className="group mt-6 inline-flex items-center gap-2.5 border border-[#7C99B3] bg-[#7C99B3] px-6 py-3 font-mono text-sm font-semibold tracking-wide text-navy-900 transition-colors duration-150 hover:border-white hover:bg-white"
                 >
-                  <IconCalendar className="h-4 w-4" />
+                  <span className="opacity-50"></span>
                   Booking Servis Sekarang
-                  <IconArrowRight className="h-3.5 w-3.5 transition-transform group-hover:translate-x-1" />
+                  <IconArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-1" />
                 </Link>
               </div>
 
