@@ -4,7 +4,7 @@ import type { ChatMessage } from "@/lib/types";
 
 type Message = ChatMessage;
 
-const MAX_AI_TURNS = 3;
+const MAX_AI_TURNS = 5;
 
 export default function ChatBot() {
   const [messages, setMessages] = useState<Message[]>([
@@ -28,7 +28,7 @@ export default function ChatBot() {
     const turnsAfterThis = newMessages.filter((m) => m.role === "user").length;
 
     // Batas tercapai di pesan ini — jangan panggil AI lagi, langsung alihkan.
-    if (turnsAfterThis >= MAX_AI_TURNS) {
+    if (turnsAfterThis === MAX_AI_TURNS) {
       setMessages([
         ...newMessages,
         {

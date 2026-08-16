@@ -6,9 +6,6 @@ import type { Booking } from '@/lib/types';
 
 const VALID_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'];
 
-// GET & PATCH di bawah ini data SEMUA customer (nama, telepon, email) — harus admin-only.
-// Sebelumnya endpoint ini tanpa auth check sama sekali (siapa saja yang hit URL-nya bisa
-// baca/ubah data), proxy.ts cuma proteksi halaman /dashboard bukan API-nya. Ditambahkan di sini.
 async function requireAdmin(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
   return verifySessionToken(token);

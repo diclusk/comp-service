@@ -2,6 +2,7 @@
 
 import { useState, FormEvent } from 'react';
 import { BorderBeam } from '@/app/components/border-beam';
+import { getOrCreateGuestSessionId } from '@/lib/Guestsession';
 
 const DEVICE_TYPES = ['Laptop', 'PC / Desktop', 'Printer', 'Lainnya'];
 const SERVICE_TYPES = [
@@ -29,6 +30,12 @@ function SectionLabel({ children }: { children: React.ReactNode }) {
   );
 }
 
+type SubmitStatus = 'idle' | 'success';
+
+function todayISO() {
+  return new Date().toISOString().split('T')[0];
+}
+
 export default function BookingPage() {
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
@@ -36,9 +43,10 @@ export default function BookingPage() {
   const [deviceType, setDeviceType] = useState(DEVICE_TYPES[0]);
   const [serviceType, setServiceType] = useState(SERVICE_TYPES[0]);
   const [description, setDescription] = useState('');
-  const [bookingDate, setBookingDate] = useState('');
+  const [bookingDate, setBookingDate] = useState(todayISO);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [status, setStatus] = useState<SubmitStatus>('idle');
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -50,13 +58,14 @@ export default function BookingPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          fullName,
+          name: fullName,
           phone,
           email,
-          deviceType,
-          serviceType,
+          device_type: deviceType,
+          service_type: serviceType,
           description,
-          bookingDate,
+          scheduled_date: bookingDate,
+          guest_session_id: getOrCreateGuestSessionId(),
         }),
       });
 
@@ -65,7 +74,15 @@ export default function BookingPage() {
         throw new Error(body?.error || 'Gagal mengirim booking');
       }
 
-      // TODO: redirect / tampilkan konfirmasi sesuai flow booking kamu
+      // Reset form ke kondisi awal biar siap dipakai lagi kalau user mau booking lagi
+      setFullName('');
+      setPhone('');
+      setEmail('');
+      setDeviceType(DEVICE_TYPES[0]);
+      setServiceType(SERVICE_TYPES[0]);
+      setDescription('');
+      setBookingDate(todayISO());
+      setStatus('success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
     } finally {
@@ -73,9 +90,48 @@ export default function BookingPage() {
     }
   }
 
+  if (status === 'success') {
+    return (
+      <div className="relative rounded-2xl p-0.5 [bg-gradient-to-b_from-[#0B1629]_to-[#060A13]] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_20px_45px_-15px_rgba(0,0,0,0.85)] scheme:dark">
+        <BorderBeam size={500} duration={8} colorFrom="#2dd4bf" colorTo="#22d3ee" borderWidth={2} ambientIntensity={0.14} />
+
+        <div className="relative overflow-hidden rounded-2xl border border-white/10 bg-linear-to-b from-[#131d30] to-[#080c14] p-6 sm:p-8 shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_20px_45px_-15px_rgba(0,0,0,0.85)] scheme:dark">
+          <div className="flex flex-col items-center py-6 text-center sm:py-10">
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-teal-400/30 bg-teal-400/10">
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={2}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                className="h-7 w-7 text-teal-400"
+              >
+                <path d="M20 6 9 17l-5-5" />
+              </svg>
+            </div>
+
+            <h2 className="mt-4 text-lg font-semibold text-white">Booking berhasil dikirim</h2>
+            <p className="mt-2 max-w-sm text-sm text-slate-400">
+              Terima kasih! Tim kami akan menghubungi kamu untuk konfirmasi jadwal servis.
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setStatus('idle')}
+              className="mt-6 rounded-lg border border-white/10 bg-white/5 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-white/10"
+            >
+              Buat Booking Baru
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="relative rounded-2xl p-0.5 [bg-gradient-to-b_from-[#0B1629]_to-[#060A13]] shadow-[inset_0_1px_0_0_rgba(255,255,255,0.08),0_20px_45px_-15px_rgba(0,0,0,0.85)] scheme:dark">
-      <BorderBeam size={500} duration={8} colorFrom="#2dd4bf" colorTo="#22d3ee" borderWidth={2} ambientIntensity={0.14} />
+      <BorderBeam size={300} duration={10} colorFrom="#2dd4bf" colorTo="#22d3ee" borderWidth={2} ambientIntensity={0.14} />
 
       <form
         onSubmit={handleSubmit}
@@ -194,6 +250,7 @@ export default function BookingPage() {
             value={bookingDate}
             onChange={(e) => setBookingDate(e.target.value)}
             required
+            min={new Date().toISOString().split('T')[0]}
             className={inputClass}
           />
         </div>

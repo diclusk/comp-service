@@ -56,6 +56,7 @@ PROSES KOMUNIKASI:
    - Merek & model: "Brand dan modelnya apa?"
    - OS: "Pakai OS apa? (Windows/Mac/Linux)"
    - Masalah: "Masalahnya seperti apa? (error apa, tidak bisa apa, dll)"
+   - Nama & nomor telepon customer (WAJIB ditanya sebelum booking offer, supaya tim bisa follow-up): "Boleh minta nama dan nomor WA/telepon untuk kami hubungi?"
 
 2. INITIAL TROUBLESHOOTING (If applicable)
    - Suggest 2-3 simple steps pertama
@@ -67,7 +68,6 @@ PROSES KOMUNIKASI:
    - Urgency: "Ini perlu cepat? Kapan bisa diambil?"
    - Budget: "Ada budget estimate berapa?"
    - Type: "Ini bisa DIY atau perlu ke toko?"
-   - Nama & nomor telepon customer (WAJIB ditanya sebelum booking offer, supaya tim bisa follow-up): "Boleh minta nama dan nomor WA/telepon untuk kami hubungi?"
 
 4. BOOKING OFFER (When ready)
    - "Kita bisa booking appointment hari [hari]. Jam berapa Anda bisa datang?"

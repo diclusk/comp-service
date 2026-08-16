@@ -14,7 +14,7 @@ export async function streamChat(messages: ChatMessage[]): Promise<Response> {
     body: JSON.stringify({
       model: 'openai/gpt-3.5-turbo',
       messages,
-      max_tokens: 300,
+      max_tokens: 400,
     }),
   });
 }
