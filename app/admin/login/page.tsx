@@ -2,6 +2,8 @@
 
 import { useState, FormEvent, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Turnstile from '@/app/components/Turnstile';
+import { getSafeRedirect } from '@/lib/safeRedirect';
 
 function LoginForm() {
   const router = useRouter();
@@ -9,17 +11,24 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
-    setLoading(true);
     setError('');
+
+    if (!captchaToken) {
+      setError('Selesaikan verifikasi captcha dulu');
+      return;
+    }
+
+    setLoading(true);
 
     try {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password }),
+        body: JSON.stringify({ password, captchaToken }),
       });
 
       if (!res.ok) {
@@ -27,11 +36,12 @@ function LoginForm() {
         throw new Error(body?.error || 'Gagal login');
       }
 
-      const redirect = searchParams.get('redirect') || '/dashboard';
+      const redirect = getSafeRedirect(searchParams.get('redirect'), '/dashboard');
       router.push(redirect);
       router.refresh();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
+      setCaptchaToken('');
     } finally {
       setLoading(false);
     }
@@ -56,6 +66,10 @@ function LoginForm() {
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
         />
 
+        <div className="mt-4">
+          <Turnstile onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
+        </div>
+
         {error && (
           <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
             {error}
@@ -64,7 +78,7 @@ function LoginForm() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || !captchaToken}
           className="mt-5 w-full rounded-lg bg-navy-900 px-4 py-2.5 text-sm font-medium text-white transition hover:bg-navy-700 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? 'Memproses...' : 'Masuk'}

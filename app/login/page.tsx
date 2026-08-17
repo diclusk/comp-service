@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import BorderGlow from '@/app/components/BorderGlow';
 import Turnstile from '@/app/components/Turnstile';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
+import { getSafeRedirect } from '@/lib/safeRedirect';
 
 function LoginForm() {
   const router = useRouter();
@@ -40,7 +41,7 @@ function LoginForm() {
         throw new Error('Email atau password salah');
       }
 
-      const redirect = searchParams.get('redirect') || '/my-bookings';
+      const redirect = getSafeRedirect(searchParams.get('redirect'), '/my-bookings');
       router.push(redirect);
       router.refresh();
     } catch (err) {

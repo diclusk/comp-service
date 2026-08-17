@@ -48,8 +48,22 @@ export async function verifySessionToken(token: string | undefined | null): Prom
   try {
     const secret = getSecret();
     const expectedSig = await sign(payload, secret);
-    return expectedSig === sig;
+    return constantTimeEqual(expectedSig, sig);
   } catch {
     return false;
   }
+}
+
+// Bandingkan dua string tanpa exit lebih cepat kalau ketemu karakter beda
+// duluan (mitigasi timing attack). Panjang beda juga tidak langsung expose
+// lewat waktu eksekusi (tetap loop sepanjang string terpanjang).
+export function constantTimeEqual(a: string, b: string): boolean {
+  const len = Math.max(a.length, b.length);
+  let diff = a.length === b.length ? 0 : 1;
+  for (let i = 0; i < len; i++) {
+    const charA = a.charCodeAt(i) || 0;
+    const charB = b.charCodeAt(i) || 0;
+    diff |= charA ^ charB;
+  }
+  return diff === 0;
 }
