@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import Script from 'next/script';
 
 declare global {
@@ -29,19 +29,20 @@ export default function Turnstile({ onVerify, onExpire }: TurnstileProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const widgetIdRef = useRef<string | null>(null);
 
-  const renderWidget = () => {
+  const renderWidget = useCallback(() => {
     if (!containerRef.current || !window.turnstile || widgetIdRef.current) return;
+
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY!,
       theme: 'dark',
       callback: onVerify,
       'expired-callback': onExpire,
     });
-  };
+  } , [onVerify, onExpire]);
 
   useEffect(() => {
     if (window.turnstile) renderWidget();
-  }, []);
+  }, [renderWidget]);
 
   return (
     <>

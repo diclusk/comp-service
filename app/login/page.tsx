@@ -28,9 +28,7 @@ function LoginForm() {
     }
 
     try {
-      // Login langsung lewat browser client (bukan fetch ke API route) supaya
-      // Navbar (yang dengar supabase.auth.onAuthStateChange di instance yang
-      // sama) langsung update tanpa perlu reload halaman.
+      
       const supabase = getSupabaseBrowser();
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
