@@ -123,9 +123,7 @@ export const ChatSessionsPanel = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
       setReply('');
-      // Optimis: tempel langsung, realtime insert nanti jadi no-op ganda? Tidak —
-      // kita filter dobel di bawah lewat id kalau perlu, tapi karena admin cuma
-      // 1 tab pada umumnya, cukup andalkan realtime saja untuk konsistensi.
+      
     } catch (e) {
       console.error(e);
       setError(e instanceof Error ? e.message : 'Gagal mengirim balasan');
@@ -139,11 +137,11 @@ export const ChatSessionsPanel = () => {
   return (
     <div className="grid grid-cols-1 gap-4 lg:grid-cols-[280px_1fr]">
       {/* Daftar sesi */}
-      <div className="rounded-xl border border-white/10 bg-white/[0.02]">
+      <div className="rounded-xl border border-white/10 bg-white/2">
         <div className="border-b border-white/10 px-4 py-3 text-xs font-semibold uppercase tracking-wide text-slate-400">
           Sesi Chat ({sessions.length})
         </div>
-        <div className="max-h-[520px] overflow-y-auto">
+        <div className="max-h-520px overflow-y-auto">
           {loading ? (
             <div className="flex items-center justify-center py-10 text-slate-500">
               <CircleNotch className="animate-spin" size={20} />
@@ -155,8 +153,8 @@ export const ChatSessionsPanel = () => {
               <button
                 key={s.id}
                 onClick={() => setActiveId(s.id)}
-                className={`block w-full border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/[0.03] ${
-                  activeId === s.id ? 'bg-white/[0.05]' : ''
+                className={`block w-full border-b border-white/5 px-4 py-3 text-left transition hover:bg-white/3 ${
+                  activeId === s.id ? 'bg-white5' : ''
                 }`}
               >
                 <div className="flex items-center justify-between gap-2">
@@ -180,7 +178,7 @@ export const ChatSessionsPanel = () => {
       </div>
 
       {/* Thread */}
-      <div className="flex min-h-[400px] flex-col rounded-xl border border-white/10 bg-white/[0.02]">
+      <div className="flex min-h-100 flex-col rounded-xl border border-white/10 bg-white/2">
         {!activeSession ? (
           <div className="flex flex-1 flex-col items-center justify-center gap-2 text-slate-600">
             <ChatCircleDots size={28} />

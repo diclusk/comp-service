@@ -11,7 +11,7 @@ export default function ChatBot() {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: "assistant",
-      content: "Halo! 👋 Saya di sini bantu diagnose masalah komputer Anda. Apa yang bermasalah hari ini?",
+      content: "Halo! Kenalin, Aku CoVS(Cooperative Virtual Service), Asisten Virtual Anda. Ada yang bisa saya bantu hari ini?",
     },
   ]);
   const [input, setInput] = useState("");
@@ -21,8 +21,6 @@ export default function ChatBot() {
     typeof window !== "undefined" ? getOrCreateChatSessionId() : ""
   );
 
-  // Dengarkan balasan admin secara live — begitu admin kirim pesan dari
-  // dashboard, langsung muncul di sini tanpa perlu refresh.
   useEffect(() => {
     if (!sessionId) return;
 
@@ -77,8 +75,6 @@ export default function ChatBot() {
         throw Error(data?.error || `Request failed with status ${res.status}`);
       }
 
-      // Sesi sudah di-takeover admin — pesan kita sudah tersimpan di server,
-      // AI tidak balas, tinggal tunggu admin lewat listener realtime di atas.
       if (data?.aiDisabled) {
         setHandedOff(true);
         return;

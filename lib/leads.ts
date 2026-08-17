@@ -9,8 +9,6 @@ export type SaveLeadInput = {
   qualified?: boolean;
 };
 
-// Upsert by phone (unique-ish key kita di sini): kalau lead dengan nomor ini
-// sudah ada, update field yang dikirim; kalau belum, insert baru.
 export async function saveLead(input: SaveLeadInput) {
   const { name, phone, email, device_info, budget, qualified } = input;
 
