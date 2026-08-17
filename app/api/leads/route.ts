@@ -3,9 +3,6 @@ import { getSupabase } from '@/lib/supabase';
 import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
 import { saveLead } from '@/lib/leads';
 
-// GET & PATCH di bawah ini data pribadi semua lead (nama, telepon, email, budget) —
-// harus admin-only, sama kayak bookings/route.ts. POST tetap publik karena dipanggil
-// chatbot (belum ada auth customer di titik itu).
 async function requireAdmin(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
   return verifySessionToken(token);

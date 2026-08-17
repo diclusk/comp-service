@@ -1,5 +1,6 @@
 "use client";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { PaperPlaneRight, Robot } from "@phosphor-icons/react";
 import type { ChatMessage } from "@/lib/types";
 import { getOrCreateChatSessionId } from "@/lib/chatSession";
 import { getGuestSessionId } from "@/lib/Guestsession";
@@ -20,6 +21,11 @@ export default function ChatBot() {
   const [sessionId] = useState<string>(() =>
     typeof window !== "undefined" ? getOrCreateChatSessionId() : ""
   );
+  const scrollRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
+  }, [messages, loading]);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -105,18 +111,23 @@ export default function ChatBot() {
   };
 
   return (
-    <div className="w-full max-w-md mx-auto bg-white rounded-lg shadow-lg p-4 h-96 flex flex-col">
-      <div className="flex-1 overflow-y-auto space-y-3 mb-4">
+    <div className="flex h-full w-full flex-col bg-transparent">
+      <div ref={scrollRef} className="flex-1 overflow-y-auto px-3 py-4 space-y-3">
         {messages.map((msg, i) => (
           <div
             key={i}
-            className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+            className={`flex items-end gap-2 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
           >
+            {msg.role !== "user" && (
+              <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--accent)/15 text-(--accent)">
+                <Robot size={14} weight="fill" />
+              </div>
+            )}
             <div
-              className={`max-w-xs px-4 py-2 rounded-lg whitespace-pre-wrap ${
+              className={`max-w-[78%] px-3.5 py-2 text-sm leading-relaxed whitespace-pre-wrap ${
                 msg.role === "user"
-                  ? "bg-blue-500 text-white"
-                  : "bg-gray-200 text-black"
+                  ? "bg-(--accent) text-navy-950 font-medium rounded-2xl rounded-br-sm"
+                  : "bg-white/6 text-slate-200 border border-white/10 rounded-2xl rounded-bl-sm"
               }`}
             >
               {msg.content}
@@ -124,37 +135,44 @@ export default function ChatBot() {
           </div>
         ))}
         {loading && (
-          <div className="flex justify-start">
-            <div className="bg-gray-200 text-black px-4 py-2 rounded-lg">
-              <span className="inline-block animate-pulse">Mengetik...</span>
+          <div className="flex items-end gap-2 justify-start">
+            <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-(--accent)/15 text-(--accent)">
+              <Robot size={14} weight="fill" />
+            </div>
+            <div className="bg-white/6 border border-white/10 rounded-2xl rounded-bl-sm px-4 py-3 flex items-center gap-1">
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.3s]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce [animation-delay:-0.15s]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-slate-400 animate-bounce" />
             </div>
           </div>
         )}
         {handedOff && (
-          <div className="flex justify-center">
-            <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
+          <div className="flex justify-center py-1">
+            <div className="flex items-center gap-1.5 text-[11px] text-slate-300 bg-white/6 border border-white/10 px-3 py-1.5 rounded-full">
+              <span className="h-1.5 w-1.5 rounded-full bg-(--status)" />
               Chat sudah diteruskan ke tim CS — Anda tetap bisa lanjut menulis di sini
             </div>
           </div>
         )}
       </div>
 
-      <div className="flex gap-2">
+      <div className="flex items-center gap-2 border-t border-white/10 px-3 py-3 shrink-0">
         <input
           type="text"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyPress={(e) => e.key === "Enter" && handleSend()}
+          onKeyDown={(e) => e.key === "Enter" && handleSend()}
           placeholder={handedOff ? "Ketik pesan untuk tim CS..." : "Ketik pesan..."}
-          className="flex-1 border rounded-lg px-3 py-2 disabled:opacity-50 disabled:bg-gray-50"
+          className="flex-1 bg-white/6 border border-white/10 rounded-xl px-3.5 py-2.5 text-sm text-slate-100 placeholder:text-slate-500 outline-none focus:border-(--accent)/50 disabled:opacity-50 transition-colors"
           disabled={loading}
         />
         <button
           onClick={handleSend}
-          disabled={loading}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
+          disabled={loading || !input.trim()}
+          aria-label="Kirim pesan"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-(--accent) text-navy-950 disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110 active:scale-95 transition-all"
         >
-          {loading ? "..." : "Kirim"}
+          <PaperPlaneRight size={18} weight="fill" />
         </button>
       </div>
     </div>
