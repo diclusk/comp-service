@@ -4,6 +4,7 @@ import { useState, FormEvent } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import BorderGlow from '@/app/components/BorderGlow';
+import Turnstile from '@/app/components/Turnstile';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 
 export default function RegisterPage() {
@@ -13,15 +14,26 @@ export default function RegisterPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [needsConfirmation, setNeedsConfirmation] = useState(false);
+  const [captchaToken, setCaptchaToken] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
 
+    if (!captchaToken) {
+      setError('Selesaikan verifikasi captcha dulu');
+      setLoading(false);
+      return;
+    }
+
     try {
       const supabase = getSupabaseBrowser();
-      const { data, error: signUpError } = await supabase.auth.signUp({ email, password });
+      const { data, error: signUpError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { captchaToken },
+      });
 
       if (signUpError) {
         throw new Error(signUpError.message);
@@ -133,6 +145,8 @@ export default function RegisterPage() {
               />
               <p className="mt-1.5 text-xs text-slate-500">Minimal 8 karakter.</p>
             </div>
+
+            <Turnstile onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
 
             {error && (
               <div className="rounded-lg border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-300">

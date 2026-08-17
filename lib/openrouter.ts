@@ -12,9 +12,10 @@ export async function streamChat(messages: ChatMessage[]): Promise<Response> {
       'Content-Type': 'application/json',
     },
     body: JSON.stringify({
-      model: 'openai/gpt-3.5-turbo',
+      model: 'openai/gpt-4o-mini',
       messages,
       max_tokens: 400,
+      temperature: 0.4,
     }),
   });
 }

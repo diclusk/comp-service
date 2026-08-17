@@ -1,16 +1,23 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { streamChat } from '@/lib/openrouter';
 import { saveLead } from '@/lib/leads';
-import type { ChatMessage } from '@/lib/types';
+import { getSupabase } from '@/lib/supabase';
+import { getSupabaseServer } from '@/lib/supabase/server';
+import { MAX_AI_TURNS, HANDOFF_NOTICE } from '@/lib/chat';
+import type { ChatMessage, ChatSession } from '@/lib/types';
 
 const SAVE_LEAD_RE = /\[SAVE_LEAD\]([\s\S]*?)\[\/SAVE_LEAD\]/;
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 // Cabut block [SAVE_LEAD]{...}[/SAVE_LEAD] dari balasan AI: simpan lead-nya ke DB
 // (best-effort, gagal simpan tidak boleh gagalin balasan ke customer), lalu
-// kembalikan teks yang sudah bersih buat ditampilkan ke customer.
-async function extractAndSaveLead(content: string): Promise<string> {
+// kembalikan teks yang sudah bersih buat ditampilkan ke customer + data lead
+// yang berhasil di-parse (buat di-denormalize ke chat_sessions.customer_name/phone).
+async function extractAndSaveLead(
+  content: string
+): Promise<{ cleaned: string; name?: string; phone?: string }> {
   const match = content.match(SAVE_LEAD_RE);
-  if (!match) return content;
+  if (!match) return { cleaned: content };
 
   const cleaned = content.replace(SAVE_LEAD_RE, '').trim();
 
@@ -18,12 +25,68 @@ async function extractAndSaveLead(content: string): Promise<string> {
     const parsed = JSON.parse(match[1]);
     if (parsed?.name && parsed?.phone) {
       await saveLead(parsed);
+      return { cleaned, name: parsed.name, phone: parsed.phone };
     }
   } catch (err) {
     console.error('SAVE_LEAD parse/save error:', err);
   }
 
-  return cleaned;
+  return { cleaned };
+}
+
+// Ambil chat_sessions yang sudah ada, atau buat baru kalau ini pesan pertama
+// dari session_id ini. Session dilink ke customer login (kalau ada) sama seperti
+// booking — lewat Supabase Auth cookie, bukan dari body request.
+async function getOrCreateSession(
+  sessionId: string,
+  guestSessionId: string | null
+): Promise<ChatSession> {
+  const supabase = getSupabase();
+
+  const { data: existing } = await supabase
+    .from('chat_sessions')
+    .select('*')
+    .eq('id', sessionId)
+    .maybeSingle();
+
+  if (existing) return existing as ChatSession;
+
+  let userId: string | null = null;
+  try {
+    const supabaseAuth = await getSupabaseServer();
+    const {
+      data: { user },
+    } = await supabaseAuth.auth.getUser();
+    userId = user?.id ?? null;
+  } catch {
+    // Guest tanpa cookie auth valid — biarkan null, chat tetap jalan sebagai guest.
+  }
+
+  let customerId: string | null = null;
+  if (userId) {
+    const { data: customer } = await supabase
+      .from('customers')
+      .select('id')
+      .eq('user_id', userId)
+      .maybeSingle();
+    customerId = customer?.id ?? null;
+  }
+
+  const { data: created, error } = await supabase
+    .from('chat_sessions')
+    .insert([
+      {
+        id: sessionId,
+        guest_session_id: guestSessionId,
+        customer_id: customerId,
+        status: 'bot',
+      },
+    ])
+    .select()
+    .single();
+
+  if (error) throw error;
+  return created as ChatSession;
 }
 
 const SYSTEM_PROMPT = `Anda adalah support technician profesional untuk toko servis komputer terpercaya.
@@ -116,9 +179,13 @@ PERSONALITY:
 export async function POST(req: NextRequest) {
   // 1. Parse & validate request body
   let messages: ChatMessage[];
+  let sessionId: string;
+  let guestSessionId: string | null;
   try {
     const body = await req.json();
     messages = body.messages;
+    sessionId = body.session_id;
+    guestSessionId = body.guest_session_id ?? null;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
   }
@@ -129,9 +196,36 @@ export async function POST(req: NextRequest) {
       { status: 400 }
     );
   }
+  if (!sessionId || !UUID_RE.test(sessionId)) {
+    return NextResponse.json({ error: 'session_id tidak valid' }, { status: 400 });
+  }
 
-  // 2. Call OpenRouter (via shared lib)
+  const supabase = getSupabase();
+  const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
+
   try {
+    const session = await getOrCreateSession(sessionId, guestSessionId);
+
+    // Simpan pesan user yang baru dikirim (sekali per request — client selalu
+    // kirim history penuh, tapi cuma pesan terbaru yang belum ada di DB).
+    if (lastUserMessage) {
+      await supabase
+        .from('chat_messages')
+        .insert([{ session_id: sessionId, role: 'user', content: lastUserMessage.content }]);
+      await supabase
+        .from('chat_sessions')
+        .update({ last_message_at: new Date().toISOString() })
+        .eq('id', sessionId);
+    }
+
+    // Sesi sudah di-takeover admin (baik lewat batas giliran, atau admin ambil
+    // alih manual lebih awal) — AI tidak boleh balas lagi sama sekali. Cukup
+    // simpan pesan user-nya, admin yang akan lihat & balas dari dashboard.
+    if (session.status === 'handed_off') {
+      return NextResponse.json({ handedOff: true, aiDisabled: true });
+    }
+
+    // 2. Call OpenRouter (via shared lib)
     const response = await streamChat([
       { role: 'system', content: SYSTEM_PROMPT },
       ...messages,
@@ -154,11 +248,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    data.choices[0].message.content = await extractAndSaveLead(
+    const { cleaned, name, phone } = await extractAndSaveLead(
       data.choices[0].message.content
     );
+    data.choices[0].message.content = cleaned;
 
-    return NextResponse.json(data);
+    await supabase
+      .from('chat_messages')
+      .insert([{ session_id: sessionId, role: 'assistant', content: cleaned }]);
+
+    if (name && phone) {
+      await supabase
+        .from('chat_sessions')
+        .update({ customer_name: name, customer_phone: phone })
+        .eq('id', sessionId);
+    }
+
+    // Giliran AI sudah habis di pesan ini — handoff ke CS, tapi AI tetap sempat
+    // balas dulu di atas (fix bug lama: sebelumnya turn terakhir di-skip total).
+    const userTurns = messages.filter((m) => m.role === 'user').length;
+    const isFinalTurn = userTurns >= MAX_AI_TURNS;
+
+    if (isFinalTurn) {
+      await supabase
+        .from('chat_messages')
+        .insert([{ session_id: sessionId, role: 'assistant', content: HANDOFF_NOTICE }]);
+      await supabase
+        .from('chat_sessions')
+        .update({ status: 'handed_off', last_message_at: new Date().toISOString() })
+        .eq('id', sessionId);
+
+      return NextResponse.json({ ...data, handedOff: true, handoffNotice: HANDOFF_NOTICE });
+    }
+
+    await supabase
+      .from('chat_sessions')
+      .update({ last_message_at: new Date().toISOString() })
+      .eq('id', sessionId);
+
+    return NextResponse.json({ ...data, handedOff: false });
   } catch (error) {
     console.error('Failed to call OpenRouter:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

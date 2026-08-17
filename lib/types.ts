@@ -51,3 +51,22 @@ export type ChatMessage = {
   role: 'system' | 'user' | 'assistant';
   content: string;
 };
+
+export type ChatSession = {
+  id: string;
+  guest_session_id?: string | null;
+  customer_id?: string | null;
+  customer_name?: string | null;
+  customer_phone?: string | null;
+  status: 'bot' | 'handed_off';
+  last_message_at: string;
+  created_at: string;
+};
+
+export type ChatSessionMessage = {
+  id: string;
+  session_id: string;
+  role: 'user' | 'assistant' | 'admin';
+  content: string;
+  created_at: string;
+};

@@ -4,6 +4,7 @@ import { useState, FormEvent, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import BorderGlow from '@/app/components/BorderGlow';
+import Turnstile from '@/app/components/Turnstile';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 
 function LoginForm() {
@@ -13,11 +14,18 @@ function LoginForm() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [captchaToken, setCaptchaToken] = useState('');
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+
+    if (!captchaToken) {
+      setError('Selesaikan verifikasi captcha dulu');
+      setLoading(false);
+      return;
+    }
 
     try {
       // Login langsung lewat browser client (bukan fetch ke API route) supaya
@@ -27,6 +35,7 @@ function LoginForm() {
       const { error: signInError } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: { captchaToken },
       });
 
       if (signInError) {
@@ -95,6 +104,8 @@ function LoginForm() {
                 placeholder="••••••••••"
               />
             </div>
+
+            <Turnstile onVerify={setCaptchaToken} onExpire={() => setCaptchaToken('')} />
 
             {error && (
               <div className="rounded-lg border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-300">

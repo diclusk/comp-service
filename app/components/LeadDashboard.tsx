@@ -13,6 +13,7 @@ import {
 } from '@phosphor-icons/react';
 import type { Lead, Booking } from '@/lib/types';
 import { formatDate, formatBudget } from '@/lib/utils';
+import { ChatSessionsPanel } from '@/app/components/ChatSessionsPanel';
 
 const BOOKING_STATUS_STYLES: Record<string, string> = {
   pending: 'border-amber-400/20 bg-amber-400/10 text-amber-300',
@@ -22,7 +23,7 @@ const BOOKING_STATUS_STYLES: Record<string, string> = {
 };
 
 export const LeadDashboard = () => {
-  const [tab, setTab] = useState<'leads' | 'bookings'>('leads');
+  const [tab, setTab] = useState<'leads' | 'bookings' | 'chats'>('leads');
   const [leads, setLeads] = useState<Lead[]>([]);
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [filter, setFilter] = useState<'all' | 'true' | 'false'>('all');
@@ -126,6 +127,9 @@ export const LeadDashboard = () => {
         <button data-testid="dashboard-tab-bookings" onClick={() => setTab('bookings')} className={chipBtn(tab === 'bookings')}>
           Booking
         </button>
+        <button data-testid="dashboard-tab-chats" onClick={() => setTab('chats')} className={chipBtn(tab === 'chats')}>
+          Live Chat
+        </button>
 
         {tab === 'leads' && (
           <>
@@ -152,7 +156,7 @@ export const LeadDashboard = () => {
         )}
       </div>
 
-      {error && (
+      {error && tab !== 'chats' && (
         <div
           data-testid="dashboard-error"
           className="mt-6 flex items-center gap-2 rounded-lg border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-300"
@@ -161,7 +165,11 @@ export const LeadDashboard = () => {
         </div>
       )}
 
-      {loading ? (
+      {tab === 'chats' ? (
+        <div className="mt-6">
+          <ChatSessionsPanel />
+        </div>
+      ) : loading ? (
         <div
           data-testid="dashboard-loading"
           className="mt-10 flex items-center justify-center gap-2.5 py-16 text-sm text-slate-500"

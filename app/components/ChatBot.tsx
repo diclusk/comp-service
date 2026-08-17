@@ -1,10 +1,11 @@
 "use client";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { ChatMessage } from "@/lib/types";
+import { getOrCreateChatSessionId } from "@/lib/chatSession";
+import { getGuestSessionId } from "@/lib/Guestsession";
+import { getSupabaseBrowser } from "@/lib/supabase/client";
 
 type Message = ChatMessage;
-
-const MAX_AI_TURNS = 5;
 
 export default function ChatBot() {
   const [messages, setMessages] = useState<Message[]>([
@@ -16,37 +17,58 @@ export default function ChatBot() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [handedOff, setHandedOff] = useState(false);
+  const [sessionId] = useState<string>(() =>
+    typeof window !== "undefined" ? getOrCreateChatSessionId() : ""
+  );
+
+  // Dengarkan balasan admin secara live — begitu admin kirim pesan dari
+  // dashboard, langsung muncul di sini tanpa perlu refresh.
+  useEffect(() => {
+    if (!sessionId) return;
+
+    const supabase = getSupabaseBrowser();
+    const channel = supabase
+      .channel(`chat_widget_${sessionId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "chat_messages",
+          filter: `session_id=eq.${sessionId}`,
+        },
+        (payload) => {
+          const row = payload.new as { role: string; content: string };
+          if (row.role !== "admin") return;
+          setMessages((prev) => [...prev, { role: "assistant", content: row.content }]);
+          setHandedOff(true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [sessionId]);
 
   const handleSend = async () => {
-    if (!input.trim() || handedOff) return;
+    if (!input.trim() || loading) return;
 
     const userMessage: Message = { role: "user", content: input };
     const newMessages = [...messages, userMessage];
     setMessages(newMessages);
     setInput("");
-
-    const turnsAfterThis = newMessages.filter((m) => m.role === "user").length;
-
-    // Batas tercapai di pesan ini — jangan panggil AI lagi, langsung alihkan.
-    if (turnsAfterThis === MAX_AI_TURNS) {
-      setMessages([
-        ...newMessages,
-        {
-          role: "assistant",
-          content:
-            "Terima kasih sudah menjelaskan detailnya! 🙏 Untuk penanganan lebih lanjut, chat ini akan diteruskan ke tim CS kami — mereka akan segera membalas di sini.",
-        },
-      ]);
-      setHandedOff(true);
-      return;
-    }
-
     setLoading(true);
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: newMessages }),
+        body: JSON.stringify({
+          messages: newMessages,
+          session_id: sessionId,
+          guest_session_id: getGuestSessionId(),
+        }),
       });
 
       const data = await res.json();
@@ -55,18 +77,30 @@ export default function ChatBot() {
         throw Error(data?.error || `Request failed with status ${res.status}`);
       }
 
+      // Sesi sudah di-takeover admin — pesan kita sudah tersimpan di server,
+      // AI tidak balas, tinggal tunggu admin lewat listener realtime di atas.
+      if (data?.aiDisabled) {
+        setHandedOff(true);
+        return;
+      }
+
       const botReply = data?.choices?.[0]?.message?.content;
       if (!botReply) {
         throw new Error("No response content from server");
       }
 
-      setMessages([...newMessages, { role: "assistant", content: botReply }]);
+      setMessages((prev) => [...prev, { role: "assistant", content: botReply }]);
+
+      if (data?.handedOff && data?.handoffNotice) {
+        setMessages((prev) => [...prev, { role: "assistant", content: data.handoffNotice }]);
+        setHandedOff(true);
+      }
     } catch (error) {
       console.error(error);
       const errorMsg =
         error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui";
-      setMessages([
-        ...newMessages,
+      setMessages((prev) => [
+        ...prev,
         { role: "assistant", content: `⚠️ Maaf, terjadi kesalahan: ${errorMsg}` },
       ]);
     } finally {
@@ -103,7 +137,7 @@ export default function ChatBot() {
         {handedOff && (
           <div className="flex justify-center">
             <div className="text-xs text-gray-500 bg-gray-100 px-3 py-1.5 rounded-full">
-              Menunggu balasan tim CS...
+              Chat sudah diteruskan ke tim CS — Anda tetap bisa lanjut menulis di sini
             </div>
           </div>
         )}
@@ -115,13 +149,13 @@ export default function ChatBot() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyPress={(e) => e.key === "Enter" && handleSend()}
-          placeholder={handedOff ? "Menunggu tim CS..." : "Ketik pesan..."}
+          placeholder={handedOff ? "Ketik pesan untuk tim CS..." : "Ketik pesan..."}
           className="flex-1 border rounded-lg px-3 py-2 disabled:opacity-50 disabled:bg-gray-50"
-          disabled={loading || handedOff}
+          disabled={loading}
         />
         <button
           onClick={handleSend}
-          disabled={loading || handedOff}
+          disabled={loading}
           className="bg-blue-600 text-white px-4 py-2 rounded-lg disabled:opacity-50"
         >
           {loading ? "..." : "Kirim"}
