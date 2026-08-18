@@ -8,7 +8,7 @@ import type { Booking } from '@/lib/types';
 const STATUS_LABELS: Record<string, string> = {
   pending: 'Menunggu Konfirmasi',
   confirmed: 'Dikonfirmasi',
-  in_progress: 'Sedang Berlangsung',
+  'in progress': 'Sedang Berlangsung',
   completed: 'Selesai',
   cancelled: 'Dibatalkan',
 };
@@ -16,7 +16,7 @@ const STATUS_LABELS: Record<string, string> = {
 const STATUS_COLORS: Record<string, string> = {
   pending: 'bg-amber-500/10 text-amber-300',
   confirmed: 'bg-blue-500/10 text-blue-300',
-  in_progress: 'bg-blue-500/10 text-blue-300',
+  'in progress': 'bg-blue-500/10 text-blue-300',
   completed: 'bg-emerald-500/10 text-emerald-300',
   cancelled: 'bg-red-500/10 text-red-300',
 };
