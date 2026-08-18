@@ -8,8 +8,6 @@ export async function GET(req: NextRequest) {
   try {
     const sessionId = req.nextUrl.searchParams.get('session_id');
 
-    // Wajib ada & harus UUID valid — jangan sampai bisa list semua booking
-    // dengan query kosong/asal.
     if (!sessionId || !UUID_RE.test(sessionId)) {
       return NextResponse.json({ error: 'session_id tidak valid' }, { status: 400 });
     }

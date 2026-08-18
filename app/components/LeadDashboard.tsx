@@ -18,6 +18,7 @@ import { ChatSessionsPanel } from '@/app/components/ChatSessionsPanel';
 const BOOKING_STATUS_STYLES: Record<string, string> = {
   pending: 'border-amber-400/20 bg-amber-400/10 text-amber-300',
   confirmed: 'border-blue-400/20 bg-blue-400/10 text-blue-300',
+  'in progress': 'border-blue-400/20 bg-blue-400/10 text-blue-300',
   completed: 'border-emerald-400/20 bg-emerald-400/10 text-emerald-300',
   cancelled: 'border-red-400/20 bg-red-400/10 text-red-300',
 };
@@ -290,7 +291,7 @@ export const LeadDashboard = () => {
                           BOOKING_STATUS_STYLES[b.status] || 'border-white/10 bg-white/5 text-slate-300'
                         }`}
                       >
-                        {['pending', 'confirmed', 'completed', 'cancelled'].map((s) => (
+                        {['pending', 'confirmed', 'in progress', 'completed', 'cancelled'].map((s) => (
                           <option key={s} value={s} className="bg-[#0b111d] text-white">
                             {s}
                           </option>

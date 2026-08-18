@@ -16,8 +16,6 @@ export async function GET() {
 
     const supabase = getSupabase();
 
-    // Bookings dilacak lewat customers.user_id, bukan guest_session_id —
-    // ini yang membedakan riwayat akun (permanen) dari riwayat guest (per-tab).
     const { data, error } = await supabase
       .from('bookings')
       .select('*, customers!inner(name, phone, user_id)')

@@ -4,7 +4,7 @@ import { getSupabaseServer } from '@/lib/supabase/server';
 import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
 import type { Booking } from '@/lib/types';
 
-const VALID_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'];
+const VALID_STATUSES = ['pending', 'confirmed', 'in progress', 'completed', 'cancelled'];
 
 async function requireAdmin(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
@@ -56,9 +56,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Cek apakah request ini dari user yang sedang login (Supabase Auth).
-    // Kalau login: link customer ke akun (user_id). Kalau tidak: booking dilacak via
-    // guest_session_id (sessionStorage di client, hilang saat tab ditutup).
     const supabaseAuth = await getSupabaseServer();
     const {
       data: { user },
@@ -68,10 +65,6 @@ export async function POST(req: NextRequest) {
     if (user) {
       customerPayload.user_id = user.id;
 
-      // Nomor telepon punya UNIQUE constraint. Kalau nomor ini sudah terdaftar
-      // untuk user lain (bukan guest, bukan akun ini sendiri), upsert onConflict
-      // 'phone' di bawah akan diam-diam memindahkan data customer itu ke akun
-      // yang sedang login — jangan izinkan.
       const { data: existing } = await supabase
         .from('customers')
         .select('user_id')
@@ -106,8 +99,6 @@ export async function POST(req: NextRequest) {
           description: description || null,
           scheduled_date,
           status: 'pending',
-          // guest_session_id diabaikan (null) kalau user sedang login — riwayatnya
-          // sudah ke-link lewat customer.user_id, gak perlu dua jalur sekaligus.
           guest_session_id: user ? null : guest_session_id || null,
         },
       ])

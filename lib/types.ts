@@ -40,7 +40,7 @@ export type Booking = {
   service_type: string;
   description?: string | null;
   scheduled_date: string;
-  status: 'pending' | 'confirmed' | 'completed' | 'cancelled';
+  status: 'pending' | 'confirmed' | 'in progress' | 'completed' | 'cancelled';
   customer_id?: string;
   guest_session_id?: string | null;
   customers?: { name: string; phone: string } | null;
