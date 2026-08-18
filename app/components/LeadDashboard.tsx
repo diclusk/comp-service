@@ -90,7 +90,7 @@ export const LeadDashboard = () => {
     { label: 'Booking', value: bookings.length, icon: CalendarCheck, color: 'text-amber-300' },
     {
       label: 'Conversion',
-      value: leads.length ? `${Math.round((bookings.length / leads.length) * 100)}%` : '0%',
+      value: leads.length ? `${Math.min(100, Math.round((bookings.length / leads.length) * 100))}%`: '0%',
       icon: ChartBar,
       color: 'text-slate-300',
     },

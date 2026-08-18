@@ -33,7 +33,7 @@ export const SERVICES: Service[] = [
   {
     slug: 'data-recovery',
     name: 'Data Recovery',
-    tagline: 'Skripsi kehapus? Harddisk tidak terbaca? Tenang, masih ada harapan.',
+    tagline: 'Data berharga terhapus? Harddisk tidak terbaca? Tenang, masih ada harapan.',
     price: 'Mulai Rp 200K',
     duration: '1-5 hari',
     icon: 'Database',
