@@ -1,16 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { ADMIN_COOKIE_NAME, constantTimeEqual, createSessionToken } from '@/lib/adminAuth';
+import { ADMIN_COOKIE_NAME, createSessionToken } from '@/lib/adminAuth';
+import { verifyPassword } from '@/lib/adminPassword';
 import { getClientIp, isRateLimited, recordLoginAttempt } from '@/lib/adminRateLimit';
 import { verifyTurnstileToken } from '@/lib/turnstile';
+import { getSupabase } from '@/lib/supabase';
 
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req);
 
   try {
-    const { password, captchaToken } = await req.json();
+    const { username, password, captchaToken } = await req.json();
 
-    // 1. Rate limit dulu, sebelum sentuh password/captcha sama sekali —
-    //    kalau IP ini udah kebanyakan gagal, jangan proses apa-apa lagi.
+    // 1. Rate limit dulu, sebelum sentuh apapun lainnya — kalau IP ini udah
+    //    kebanyakan gagal, jangan proses apa-apa lagi.
     const { limited, retryAfterSeconds } = await isRateLimited(ip);
     if (limited) {
       return NextResponse.json(
@@ -23,7 +25,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Captcha wajib valid sebelum cek password.
+    // 2. Captcha wajib valid sebelum cek kredensial.
     if (typeof captchaToken !== 'string' || !captchaToken) {
       await recordLoginAttempt(ip, false);
       return NextResponse.json({ error: 'Selesaikan verifikasi captcha dulu' }, { status: 400 });
@@ -34,26 +36,39 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Verifikasi captcha gagal, coba lagi' }, { status: 400 });
     }
 
-    // 3. Cek password (constant-time, hindari timing attack).
-    const adminPassword = process.env.ADMIN_PASSWORD;
-    if (!adminPassword) {
-      return NextResponse.json(
-        { error: 'ADMIN_PASSWORD belum di-set di .env.local' },
-        { status: 500 }
-      );
+    if (typeof username !== 'string' || !username || typeof password !== 'string' || !password) {
+      await recordLoginAttempt(ip, false);
+      return NextResponse.json({ error: 'Username dan password wajib diisi' }, { status: 400 });
     }
 
-    const passwordOk =
-      typeof password === 'string' && constantTimeEqual(password, adminPassword);
+    // 3. Cek kredensial ke tabel admins (password di-hash bcrypt, bukan
+    //    dibandingkan plaintext lagi). Pesan error digeneralisir (gak bilang
+    //    "username gak ada" vs "password salah") biar gak bocorin username valid.
+    const supabase = getSupabase();
+    const { data: admin, error: lookupError } = await supabase
+      .from('admins')
+      .select('id, username, password_hash')
+      .eq('username', username)
+      .maybeSingle();
 
-    if (!passwordOk) {
+    if (lookupError) {
+      console.error('Admin lookup error:', lookupError);
+      return NextResponse.json({ error: 'Gagal login' }, { status: 500 });
+    }
+
+    const passwordOk = admin ? await verifyPassword(password, admin.password_hash) : false;
+
+    if (!admin || !passwordOk) {
       await recordLoginAttempt(ip, false);
-      return NextResponse.json({ error: 'Password salah' }, { status: 401 });
+      return NextResponse.json({ error: 'Username atau password salah' }, { status: 401 });
     }
 
     await recordLoginAttempt(ip, true);
 
-    const { token, maxAgeSeconds } = await createSessionToken();
+    const { token, maxAgeSeconds } = await createSessionToken({
+      adminId: admin.id,
+      username: admin.username,
+    });
     const res = NextResponse.json({ ok: true });
     res.cookies.set(ADMIN_COOKIE_NAME, token, {
       httpOnly: true,

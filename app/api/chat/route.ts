@@ -214,7 +214,9 @@ export async function POST(req: NextRequest) {
     // Sesi sudah di-takeover admin (baik lewat batas giliran, atau admin ambil
     // alih manual lebih awal) — AI tidak boleh balas lagi sama sekali. Cukup
     // simpan pesan user-nya, admin yang akan lihat & balas dari dashboard.
-    if (session.status === 'handed_off') {
+    // Sesi yang sudah ditutup manual oleh admin ('closed') juga diperlakukan
+    // sama — kalau customer masih ngirim pesan, cuma disimpan, gak ada balasan AI.
+    if (session.status === 'handed_off' || session.status === 'closed') {
       return NextResponse.json({ handedOff: true, aiDisabled: true });
     }
 

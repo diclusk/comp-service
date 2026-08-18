@@ -14,6 +14,13 @@ type SessionWithPreview = ChatSession & {
 const STATUS_STYLES: Record<string, string> = {
   bot: 'border-teal-400/20 bg-teal-400/10 text-teal-300',
   handed_off: 'border-amber-400/20 bg-amber-400/10 text-amber-300',
+  closed: 'border-slate-400/20 bg-slate-400/10 text-slate-400',
+};
+
+const STATUS_LABELS: Record<string, string> = {
+  bot: 'AI',
+  handed_off: 'CS',
+  closed: 'Ditutup',
 };
 
 export const ChatSessionsPanel = () => {
@@ -25,6 +32,7 @@ export const ChatSessionsPanel = () => {
   const [messagesLoading, setMessagesLoading] = useState(false);
   const [reply, setReply] = useState('');
   const [sending, setSending] = useState(false);
+  const [updatingStatus, setUpdatingStatus] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const loadSessions = useCallback(async () => {
@@ -132,6 +140,25 @@ export const ChatSessionsPanel = () => {
     }
   };
 
+  const updateStatus = async (status: 'handed_off' | 'closed') => {
+    if (!activeId || updatingStatus) return;
+    setUpdatingStatus(true);
+    try {
+      const res = await fetch(`/api/admin/chats/${activeId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setSessions((prev) => prev.map((s) => (s.id === activeId ? { ...s, status } : s)));
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Gagal mengubah status sesi');
+    } finally {
+      setUpdatingStatus(false);
+    }
+  };
+
   const activeSession = sessions.find((s) => s.id === activeId);
 
   return (
@@ -164,7 +191,7 @@ export const ChatSessionsPanel = () => {
                   <span
                     className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLES[s.status]}`}
                   >
-                    {s.status === 'bot' ? 'AI' : 'CS'}
+                    {STATUS_LABELS[s.status]}
                   </span>
                 </div>
                 <p className="mt-1 truncate text-xs text-slate-500">
@@ -195,12 +222,35 @@ export const ChatSessionsPanel = () => {
                   <p className="text-xs text-slate-500">{activeSession.customer_phone}</p>
                 )}
               </div>
-              <span
-                className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLES[activeSession.status]}`}
-              >
-                {activeSession.status === 'bot' ? <Robot size={12} /> : <Headset size={12} />}
-                {activeSession.status === 'bot' ? 'Ditangani AI' : 'Ditangani CS'}
-              </span>
+              <div className="flex items-center gap-2">
+                <span
+                  className={`flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${STATUS_STYLES[activeSession.status]}`}
+                >
+                  {activeSession.status === 'bot' && <Robot size={12} />}
+                  {activeSession.status === 'handed_off' && <Headset size={12} />}
+                  {activeSession.status === 'bot' && 'Ditangani AI'}
+                  {activeSession.status === 'handed_off' && 'Ditangani CS'}
+                  {activeSession.status === 'closed' && 'Ditutup'}
+                </span>
+
+                {activeSession.status === 'closed' ? (
+                  <button
+                    onClick={() => updateStatus('handed_off')}
+                    disabled={updatingStatus}
+                    className="rounded-full border border-teal-400/20 bg-teal-400/10 px-2.5 py-0.5 text-[10px] font-medium text-teal-300 transition hover:bg-teal-400/20 disabled:opacity-50"
+                  >
+                    Buka Kembali
+                  </button>
+                ) : (
+                  <button
+                    onClick={() => updateStatus('closed')}
+                    disabled={updatingStatus}
+                    className="rounded-full border border-white/10 bg-white/5 px-2.5 py-0.5 text-[10px] font-medium text-slate-300 transition hover:bg-white/10 disabled:opacity-50"
+                  >
+                    Tutup Sesi
+                  </button>
+                )}
+              </div>
             </div>
 
             <div ref={scrollRef} className="flex-1 space-y-2 overflow-y-auto px-4 py-3">

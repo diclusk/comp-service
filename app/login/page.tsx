@@ -16,6 +16,27 @@ function LoginForm() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [captchaToken, setCaptchaToken] = useState('');
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogleSignIn = async () => {
+    setError('');
+    setGoogleLoading(true);
+
+    const redirect = getSafeRedirect(searchParams.get('redirect'), '/my-bookings');
+    const supabase = getSupabaseBrowser();
+    const { error: oauthError } = await supabase.auth.signInWithOAuth({
+      provider: 'google',
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback?redirect=${encodeURIComponent(redirect)}`,
+      },
+    });
+
+    if (oauthError) {
+      setError('Gagal login dengan Google');
+      setGoogleLoading(false);
+    }
+    // Kalau sukses, browser langsung di-redirect ke Google — nggak perlu setGoogleLoading(false) lagi.
+  };
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
@@ -120,6 +141,27 @@ function LoginForm() {
               {loading ? 'Memproses...' : 'Masuk'}
             </button>
           </form>
+
+          <div className="mt-6 flex items-center gap-3">
+            <div className="h-px flex-1 bg-white/10" />
+            <span className="text-xs text-slate-500">atau</span>
+            <div className="h-px flex-1 bg-white/10" />
+          </div>
+
+          <button
+            type="button"
+            onClick={handleGoogleSignIn}
+            disabled={googleLoading}
+            className="mt-4 flex w-full items-center justify-center gap-2.5 rounded-lg border border-white/10 bg-[#0f1826] py-2.5 text-sm font-medium text-slate-200 transition hover:border-white/20 hover:bg-[#141f30] disabled:opacity-60"
+          >
+            <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true">
+              <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.56 2.7-3.87 2.7-6.62Z" />
+              <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.95v2.33A9 9 0 0 0 9 18Z" />
+              <path fill="#FBBC05" d="M3.95 10.7a5.4 5.4 0 0 1 0-3.4V4.97H.95a9 9 0 0 0 0 8.06l3-2.33Z" />
+              <path fill="#EA4335" d="M9 3.58c1.32 0 2.51.45 3.44 1.35l2.58-2.58C13.46.9 11.43 0 9 0A9 9 0 0 0 .95 4.97l3 2.33C4.66 5.17 6.65 3.58 9 3.58Z" />
+            </svg>
+            {googleLoading ? 'Menghubungkan...' : 'Masuk dengan Google'}
+          </button>
 
           <p className="mt-6 text-center text-sm text-slate-500">
             Belum punya akun?{' '}

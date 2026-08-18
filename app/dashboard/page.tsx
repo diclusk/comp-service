@@ -1,7 +1,12 @@
 import Link from 'next/link';
+import { cookies } from 'next/headers';
 import { LeadDashboard } from '@/app/components/LeadDashboard';
+import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const cookieStore = await cookies();
+  const session = await verifySessionToken(cookieStore.get(ADMIN_COOKIE_NAME)?.value);
+
   return (
     <div className="min-h-screen bg-[#060a13] px-4 py-10 sm:px-6">
       <div className="mx-auto max-w-7xl">
@@ -12,12 +17,19 @@ export default function DashboardPage() {
           >
             ← Kembali ke Beranda
           </Link>
-          <a
-            href="/api/admin/logout"
-            className="text-xs font-medium text-slate-500 transition hover:text-red-300"
-          >
-            Keluar →
-          </a>
+          <div className="flex items-center gap-3">
+            {session && (
+              <span className="text-xs text-slate-600">
+                Login sebagai <span className="text-slate-400">{session.username}</span>
+              </span>
+            )}
+            <a
+              href="/api/admin/logout"
+              className="text-xs font-medium text-slate-500 transition hover:text-red-300"
+            >
+              Keluar →
+            </a>
+          </div>
         </div>
 
         <p className="mt-6 text-xs font-semibold uppercase tracking-[0.2em] text-teal-400">

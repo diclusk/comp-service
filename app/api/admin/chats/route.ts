@@ -4,7 +4,7 @@ import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
 
 async function requireAdmin(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  return verifySessionToken(token);
+  return (await verifySessionToken(token)) !== null;
 }
 
 // List semua chat session (bot yang lagi jalan + yang sudah di-handoff),

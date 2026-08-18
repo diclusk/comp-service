@@ -8,7 +8,7 @@ const VALID_STATUSES = ['pending', 'confirmed', 'completed', 'cancelled'];
 
 async function requireAdmin(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  return verifySessionToken(token);
+  return (await verifySessionToken(token)) !== null;
 }
 
 export async function GET(req: NextRequest) {

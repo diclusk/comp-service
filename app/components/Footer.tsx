@@ -116,7 +116,7 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <IconMail className="h-4 w-4 shrink-0 text-slate-500" />
-                zenitops78@gmail.com
+                zenithops78@gmail.com
               </li>
               <li className="flex items-center gap-2">
                 <IconClock className="h-4 w-4 shrink-0 text-slate-500" />

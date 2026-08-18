@@ -6,9 +6,9 @@ export async function proxy(req: NextRequest) {
   // --- Admin guard (custom HMAC cookie, terpisah dari Supabase Auth) ---
   if (req.nextUrl.pathname.startsWith('/dashboard')) {
     const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
-    const valid = await verifySessionToken(token);
+    const session = await verifySessionToken(token);
 
-    if (!valid) {
+    if (!session) {
       const url = req.nextUrl.clone();
       url.pathname = '/admin/login';
       url.searchParams.set('redirect', req.nextUrl.pathname);

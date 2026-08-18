@@ -8,6 +8,7 @@ import { getSafeRedirect } from '@/lib/safeRedirect';
 function LoginForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -28,7 +29,7 @@ function LoginForm() {
       const res = await fetch('/api/admin/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password, captchaToken }),
+        body: JSON.stringify({ username, password, captchaToken }),
       });
 
       if (!res.ok) {
@@ -56,13 +57,24 @@ function LoginForm() {
         <h1 className="text-lg font-semibold text-black">Admin Login</h1>
         <p className="mt-1 text-sm text-navy-950 md:h-10">Masuk untuk mengelola booking & leads.</p>
 
-        <label className="mt-6 block text-xs font-medium text-navy-600">Password</label>
+        <label className="mt-6 block text-xs font-medium text-navy-600">Username</label>
+        <input
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
+          autoFocus
+          required
+          autoComplete="username"
+          className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
+        />
+
+        <label className="mt-4 block text-xs font-medium text-navy-600">Password</label>
         <input
           type="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          autoFocus
           required
+          autoComplete="current-password"
           className="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm outline-none focus:border-navy-400"
         />
 

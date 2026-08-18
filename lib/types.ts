@@ -58,7 +58,7 @@ export type ChatSession = {
   customer_id?: string | null;
   customer_name?: string | null;
   customer_phone?: string | null;
-  status: 'bot' | 'handed_off';
+  status: 'bot' | 'handed_off' | 'closed';
   last_message_at: string;
   created_at: string;
 };

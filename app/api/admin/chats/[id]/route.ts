@@ -4,7 +4,7 @@ import { ADMIN_COOKIE_NAME, verifySessionToken } from '@/lib/adminAuth';
 
 async function requireAdmin(req: NextRequest): Promise<boolean> {
   const token = req.cookies.get(ADMIN_COOKIE_NAME)?.value;
-  return verifySessionToken(token);
+  return (await verifySessionToken(token)) !== null;
 }
 
 // Riwayat pesan lengkap satu session, urut lama -> baru.
@@ -79,5 +79,49 @@ export async function POST(
   } catch (error) {
     console.error('Admin chat reply error:', error);
     return NextResponse.json({ error: 'Failed to send reply' }, { status: 500 });
+  }
+}
+
+const ALLOWED_STATUSES = ['bot', 'handed_off', 'closed'] as const;
+
+// Admin ubah status sesi manual — misalnya tutup sesi yang udah selesai dilayani,
+// atau buka lagi sesi yang ke-tutup gak sengaja. Beda dari POST di atas: ini gak
+// nulis pesan apapun, cuma ganti status.
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  if (!(await requireAdmin(req))) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+  }
+
+  try {
+    const { id } = await params;
+    const body = await req.json();
+    const status = body.status;
+
+    if (!ALLOWED_STATUSES.includes(status)) {
+      return NextResponse.json(
+        { error: `status harus salah satu dari: ${ALLOWED_STATUSES.join(', ')}` },
+        { status: 400 }
+      );
+    }
+
+    const supabase = getSupabase();
+    const { data: session, error } = await supabase
+      .from('chat_sessions')
+      .update({ status })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      return NextResponse.json({ error: error.message }, { status: 400 });
+    }
+
+    return NextResponse.json({ session });
+  } catch (error) {
+    console.error('Admin chat status update error:', error);
+    return NextResponse.json({ error: 'Failed to update status' }, { status: 500 });
   }
 }
