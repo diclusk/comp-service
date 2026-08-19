@@ -25,7 +25,7 @@ export default function ServicesPage() {
             glowRadius={20}
             glowIntensity={0.8}
             coneSpread={30}
-            animated={true}
+            animated={false}
             fillOpacity={0.15}
             className="h-full"
           >

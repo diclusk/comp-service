@@ -2,6 +2,7 @@
 
 import { useState, useEffect, type ReactNode } from 'react';
 import Link from 'next/link';
+import Image from 'next/image'; 
 import { usePathname, useRouter } from 'next/navigation';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
 
@@ -10,8 +11,6 @@ const NAV_LINKS = [
   { href: '/services', label: 'Layanan' },
 ];
 
-// Satu aksen tunggal (biru terdesaturasi) — bukan gradient biru cerah.
-// Dipakai konsisten di seluruh navbar: logo, garis aktif, border tombol.
 const ACCENT = '#7C99B3';
 
 export default function Navbar() {
@@ -58,7 +57,7 @@ export default function Navbar() {
 
   return (
     <header className="top-0 z-50 border-b border-white/10 bg-navy-900/95 backdrop-blur-xl relative overflow-hidden">
-      {/* Dot-grid skematik di belakang navbar, seperti garis referensi PCB */}
+      {/* Dot-grid skematik di navbar */}
       <div
         className="pointer-events-none absolute inset-0 opacity-[0.35]"
         style={{
@@ -71,15 +70,10 @@ export default function Navbar() {
       <span className="pointer-events-none absolute bottom-0 left-4 h-2 w-2 border-b border-l sm:left-6" style={{ borderColor: `${ACCENT}66` }} />
       <span className="pointer-events-none absolute bottom-0 right-4 h-2 w-2 border-b border-r sm:right-6" style={{ borderColor: `${ACCENT}66` }} />
 
-      <nav className="relative mx-auto flex max-w-7xl items-center justify-between px-4 py-3 sm:px-6" aria-label="Navigasi utama">
+      <nav className="relative mx-auto flex max-w-8xl items-center justify-between px-4 py-3 sm:px-6" aria-label="Navigasi utama">
         {/* Logo */}
         <Link href="/" onClick={() => setIsOpen(false)} className="group flex items-center gap-3">
-          <span
-            className="font-mono text-lg font-bold tracking-tight transition-opacity group-hover:opacity-80"
-            style={{ color: ACCENT }}
-          >
-            [ZCS]
-          </span>
+          <Image src="/logo.png" alt="Logo Servis Komputer" width={2103} height={748} className="h-14 w-36" />
           <div className="hidden leading-none sm:block">
             <div className="font-mono text-[11px] uppercase tracking-[0.2em] text-white">
               Servis<span style={{ color: ACCENT }}>.</span>Komputer
@@ -131,10 +125,9 @@ export default function Navbar() {
             </Link>
           )}
 
-          {/* CTA utama — outline seperti Login secara default, isi solid pas hover */}
           <Link
             href="/booking"
-            className="hidden h-9 items-center border border-[#7C99B3] px-4 font-mono text-xs font-semibold uppercase tracking-wider text-[#7C99B3] transition-colors duration-150 hover:bg-[#7C99B3] hover:text-navy-900 sm:inline-flex"
+            className="hidden h-9 items-center border border-[#7C99B3] px-4 font-mono text-xs font-semibold uppercase tracking-wider text-[#7C99B3] transition-colors duration-150 hover:bg-blue-300 hover:text-navy-900 sm:inline-flex"
           >
             Booking Sekarang ›
           </Link>

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import AskAiButton from './components/AskAiButton';
 import HeroVisual from './components/HeroVisual';
 import HomeSections, { type IconKey } from './components/HomeSections';
 import StatusBadge from './components/StatusBadge';
@@ -118,19 +119,13 @@ export default function Home() {
               {/* Solid border = tindakan final (booking). Dashed = tindakan awal/eksploratif (tanya dulu). */}
               <Link
                 href="/booking"
-                className="group inline-flex items-center justify-center gap-2.5 border border-[#7C99B3] bg-[#7C99B3] px-6 py-3 font-mono text-sm font-semibold tracking-wide text-navy-900 transition-colors duration-150 hover:border-white hover:bg-white"
+                className="group inline-flex items-center justify-center gap-2.5 border border-[#7C99B3] bg-blue-300 px-6 py-3 font-mono text-sm font-semibold tracking-wide text-navy-900 transition-colors duration-150 hover:border-white hover:bg-white"
               >
                 <span className="opacity-50"></span>
                 Booking Servis Sekarang
                 <IconArrowRight className="h-3.5 w-3.5 transition-transform duration-150 group-hover:translate-x-1" />
               </Link>
-              <Link
-                href="/#chatbot"
-                className="group inline-flex items-center justify-center gap-2.5 border border-dashed border-white/25 px-6 py-3 font-mono text-sm text-white transition-colors duration-150 hover:border-[#7C99B3] hover:text-[#7C99B3]"
-              >
-                <span className="text-[#7C99B3] group-hover:text-current">&gt;_</span>
-                Tanya AI Dulu
-              </Link>
+              <AskAiButton />
             </div>
 
             <div className="mt-8 flex items-center gap-2 text-sm text-slate-400">
@@ -181,7 +176,7 @@ export default function Home() {
                 </p>
                 <Link
                   href="/booking"
-                  className="group mt-6 inline-flex items-center gap-2.5 border border-[#7C99B3] bg-[#7C99B3] px-6 py-3 font-mono text-sm font-semibold tracking-wide text-navy-900 transition-colors duration-150 hover:border-white hover:bg-white"
+                  className="group mt-6 inline-flex items-center gap-2.5 border border-[#7C99B3] bg-blue-300 px-6 py-3 font-mono text-sm font-semibold tracking-wide text-navy-900 transition-colors duration-150 hover:border-white hover:bg-white"
                 >
                   <span className="opacity-50"></span>
                   Booking Servis Sekarang

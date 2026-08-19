@@ -5,6 +5,7 @@ import "./globals.css";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import ChatBubble from "./components/ChatBubble";
+import { ChatWidgetProvider } from "./components/ChatWidgetProvider";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -37,10 +38,12 @@ export default function RootLayout({
   return (
     <html lang="id" className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}>
       <body className="w-full min-h-screen flex flex-col">
-        <Navbar />
-        <main className="w-full flex-1">{children}</main>
-        <ChatBubble />
-        <Footer />
+        <ChatWidgetProvider>
+          <Navbar />
+          <main className="w-full flex-1">{children}</main>
+          <ChatBubble />
+          <Footer />
+        </ChatWidgetProvider>
       </body>
     </html>
   );
