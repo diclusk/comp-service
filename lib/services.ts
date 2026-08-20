@@ -1,5 +1,18 @@
 import type { Service } from '@/lib/types';
 
+// Map slug servis (halaman /services) -> value dropdown "Jenis Servis" di
+// BookingForm.tsx, dipakai buat auto-select saat datang dari tombol
+// "Pesan servis ini". Value di sini harus persis sama dengan isi SERVICE_TYPES
+// di app/components/BookingForm.tsx.
+export const SERVICE_BOOKING_TYPE: Record<string, string> = {
+  'servis-hardware': 'Perbaikan Hardware',
+  'install-ulang': 'Instalasi Software',
+  'data-recovery': 'Lainnya',
+  upgrade: 'Upgrade Komponen',
+  cleaning: 'Cleaning & Maintenance',
+  'virus-optimasi': 'Cleaning & Maintenance',
+};
+
 export const services: Service[] = [
   {
     slug: 'servis-hardware',

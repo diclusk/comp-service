@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, FormEvent, ChangeEvent } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { BorderBeam } from '@/app/components/border-beam';
 import { getOrCreateGuestSessionId } from '@/lib/Guestsession';
 import { compressImage } from '@/lib/compressImage';
@@ -41,11 +42,18 @@ function todayISO() {
 }
 
 export default function BookingPage() {
+  const searchParams = useSearchParams();
+  const preselectedService = searchParams.get('service');
+  const initialServiceType =
+    preselectedService && SERVICE_TYPES.includes(preselectedService)
+      ? preselectedService
+      : SERVICE_TYPES[0];
+
   const [fullName, setFullName] = useState('');
   const [phone, setPhone] = useState('');
   const [email, setEmail] = useState('');
   const [deviceType, setDeviceType] = useState(DEVICE_TYPES[0]);
-  const [serviceType, setServiceType] = useState(SERVICE_TYPES[0]);
+  const [serviceType, setServiceType] = useState(initialServiceType);
   const [description, setDescription] = useState('');
   const [bookingDate, setBookingDate] = useState(todayISO);
   const [loading, setLoading] = useState(false);

@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import BookingForm from '@/app/components/BookingForm';
 import { BorderBeam } from '@/app/components/border-beam';
 
@@ -233,7 +234,9 @@ export default function BookingPage() {
           </aside>
 
           {/* Booking Form */}
-          <BookingForm />
+          <Suspense fallback={null}>
+            <BookingForm />
+          </Suspense>
         </div>
       </div>
     </main>

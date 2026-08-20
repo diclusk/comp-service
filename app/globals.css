@@ -8,8 +8,21 @@
   --color-cyber: #00e5ff;
   --color-ink: #09090b;
 
+  /* Dipakai halaman /services (diagnostic-ticket layout) — sebelumnya class
+     bg-surface/border-border/text-muted/bg-accent/text-status dipakai di
+     ServiceCard.tsx tapi tokennya belum pernah didefinisikan di sini,
+     jadi Tailwind v4 skip generate class-nya (itu sebabnya kartu lama
+     terlihat flat/kosong, teks & border-nya nggak ke-render). */
+  --color-surface: #0a1428;
+  --color-surface-2: #0d1a33;
+  --color-border: rgb(202 212 235 / 0.08);
+  --color-muted: #8aa0c4;
+  --color-accent: #ff8c42;
+  --color-status: #2ecc71;
+
   --font-display: "Clash Display", "Work Sans", ui-sans-serif, system-ui, sans-serif;
   --font-body: "Work Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "Menlo", "Consolas", monospace;
 
 }
 
