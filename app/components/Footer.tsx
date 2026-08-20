@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import {
-  IconMonitor,
   IconMapPin,
   IconPhone,
   IconMail,
@@ -43,8 +43,8 @@ export default function Footer() {
           {/* Brand */}
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white">
-                <IconMonitor className="h-5 w-5" />
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy-900 text-white">
+                <Image src="/favicon.svg" alt="Logo" width={60} height={60} />
               </div>
               <div className="leading-tight">
                 <div className="flex items-baseline gap-1">

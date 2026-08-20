@@ -143,9 +143,9 @@ function LoginForm() {
           </form>
 
           <div className="mt-6 flex items-center gap-3">
-            <div className="h-px flex-1 bg-white/10" />
-            <span className="text-xs text-slate-500">atau</span>
-            <div className="h-px flex-1 bg-white/10" />
+            <div className="h-px flex-1 bg-white/60" />
+            <span className="text-xs text-blue-50">atau</span>
+            <div className="h-px flex-1 bg-white/60" />
           </div>
 
           <button
