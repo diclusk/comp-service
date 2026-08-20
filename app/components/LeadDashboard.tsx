@@ -251,7 +251,7 @@ export const LeadDashboard = () => {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="bg-[#0f1826]">
-                {['Customer', 'Servis', 'Jadwal', 'Deskripsi', 'Status'].map((h) => (
+                {['Customer', 'Servis', 'Jadwal', 'Deskripsi', 'Foto', 'Status'].map((h) => (
                   <th
                     key={h}
                     className="border-b border-white/6 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-teal-400/80"
@@ -264,7 +264,7 @@ export const LeadDashboard = () => {
             <tbody>
               {bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={5} data-testid="bookings-empty" className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={6} data-testid="bookings-empty" className="px-4 py-12 text-center text-slate-500">
                     Belum ada booking.
                   </td>
                 </tr>
@@ -281,6 +281,20 @@ export const LeadDashboard = () => {
                     </td>
                     <td className="max-w-xs truncate border-b border-white/6 px-4 py-3 text-xs text-slate-400">
                       {b.description || '—'}
+                    </td>
+                    <td className="border-b border-white/6 px-4 py-3">
+                      {b.photo_url ? (
+                        <a href={b.photo_url} target="_blank" rel="noopener noreferrer">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={b.photo_url}
+                            alt="Foto perangkat"
+                            className="h-10 w-10 rounded-md border border-white/10 object-cover transition hover:opacity-80"
+                          />
+                        </a>
+                      ) : (
+                        <span className="text-xs text-slate-600">—</span>
+                      )}
                     </td>
                     <td className="border-b border-white/6 px-4 py-3">
                       <select

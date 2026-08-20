@@ -1,8 +1,12 @@
 'use client';
 
-import { useState, FormEvent } from 'react';
+import { useState, FormEvent, ChangeEvent } from 'react';
 import { BorderBeam } from '@/app/components/border-beam';
 import { getOrCreateGuestSessionId } from '@/lib/Guestsession';
+import { compressImage } from '@/lib/compressImage';
+import { getSupabaseBrowser } from '@/lib/supabase/client';
+
+const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB, sebelum dikompres
 
 const DEVICE_TYPES = ['Laptop', 'PC / Desktop', 'Printer', 'Lainnya'];
 const SERVICE_TYPES = [
@@ -47,6 +51,42 @@ export default function BookingPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [status, setStatus] = useState<SubmitStatus>('idle');
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [photoPreview, setPhotoPreview] = useState<string>('');
+  const [compressing, setCompressing] = useState(false);
+
+  async function handlePhotoChange(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    e.target.value = ''; // biar bisa pilih file yang sama lagi kalau mau ganti
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('File foto harus berupa gambar');
+      return;
+    }
+    if (file.size > MAX_PHOTO_BYTES) {
+      setError('Ukuran foto maksimal 5MB');
+      return;
+    }
+
+    setError('');
+    setCompressing(true);
+    try {
+      const compressed = await compressImage(file);
+      setPhotoFile(compressed);
+      setPhotoPreview(URL.createObjectURL(compressed));
+    } catch {
+      setError('Gagal memproses foto, coba foto lain');
+    } finally {
+      setCompressing(false);
+    }
+  }
+
+  function removePhoto() {
+    if (photoPreview) URL.revokeObjectURL(photoPreview);
+    setPhotoFile(null);
+    setPhotoPreview('');
+  }
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -54,6 +94,22 @@ export default function BookingPage() {
     setError('');
 
     try {
+      let photoUrl: string | null = null;
+      if (photoFile) {
+        const supabase = getSupabaseBrowser();
+        const path = `${getOrCreateGuestSessionId() || 'guest'}-${Date.now()}.jpg`;
+        const { error: uploadError } = await supabase.storage
+          .from('booking-photos')
+          .upload(path, photoFile, { contentType: 'image/jpeg' });
+
+        if (uploadError) {
+          throw new Error('Gagal upload foto: ' + uploadError.message);
+        }
+
+        const { data: publicUrlData } = supabase.storage.from('booking-photos').getPublicUrl(path);
+        photoUrl = publicUrlData.publicUrl;
+      }
+
       const res = await fetch('/api/bookings', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -66,6 +122,7 @@ export default function BookingPage() {
           description,
           scheduled_date: bookingDate,
           guest_session_id: getOrCreateGuestSessionId(),
+          photo_url: photoUrl,
         }),
       });
 
@@ -82,6 +139,7 @@ export default function BookingPage() {
       setServiceType(SERVICE_TYPES[0]);
       setDescription('');
       setBookingDate(todayISO());
+      removePhoto();
       setStatus('success');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Terjadi kesalahan');
@@ -255,6 +313,45 @@ export default function BookingPage() {
           />
         </div>
 
+        <div className="mt-4">
+          <label className="block text-sm font-medium text-slate-300">
+            Foto Perangkat <span className="text-slate-500">(opsional)</span>
+          </label>
+
+          {photoPreview ? (
+            <div className="mt-1.5 flex items-center gap-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={photoPreview}
+                alt="Preview foto perangkat"
+                className="h-16 w-16 rounded-lg border border-white/10 object-cover"
+              />
+              <button
+                type="button"
+                onClick={removePhoto}
+                className="rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-xs font-medium text-white transition hover:bg-white/10"
+              >
+                Hapus Foto
+              </button>
+            </div>
+          ) : (
+            <label
+              htmlFor="photo"
+              className="mt-1.5 flex w-full cursor-pointer items-center justify-center rounded-lg border border-dashed border-white/15 bg-[#0f1826] px-3.5 py-4 text-sm text-slate-400 transition hover:border-teal-400/40 hover:text-slate-300"
+            >
+              {compressing ? 'Memproses foto...' : 'Klik untuk pilih foto (maks. 5MB)'}
+              <input
+                id="photo"
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoChange}
+                disabled={compressing}
+                className="hidden"
+              />
+            </label>
+          )}
+        </div>
+
         {error && (
           <div className="mt-4 rounded-lg border border-red-400/20 bg-red-400/10 px-3.5 py-2.5 text-sm text-red-300">
             {error}
@@ -263,7 +360,7 @@ export default function BookingPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={loading || compressing}
           className="mt-6 w-full rounded-lg bg-teal-400 py-2.5 text-sm font-semibold text-[#06110f] transition hover:bg-teal-300 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? 'Mengirim...' : 'Kirim Booking'}

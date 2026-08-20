@@ -43,6 +43,7 @@ export type Booking = {
   status: 'pending' | 'confirmed' | 'in progress' | 'completed' | 'cancelled';
   customer_id?: string;
   guest_session_id?: string | null;
+  photo_url?: string | null;
   customers?: { name: string; phone: string } | null;
   created_at?: string;
 };

@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
       description,
       scheduled_date,
       guest_session_id,
+      photo_url,
     } = body;
 
     if (!name || !phone || !service_type || !scheduled_date) {
@@ -100,6 +101,7 @@ export async function POST(req: NextRequest) {
           scheduled_date,
           status: 'pending',
           guest_session_id: user ? null : guest_session_id || null,
+          photo_url: photo_url || null,
         },
       ])
       .select('*, customers(name, phone)')
