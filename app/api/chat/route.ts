@@ -4,6 +4,7 @@ import { saveLead } from '@/lib/leads';
 import { getSupabase } from '@/lib/supabase';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { MAX_AI_TURNS, HANDOFF_NOTICE } from '@/lib/chat';
+import { isChatRateLimited, recordChatRequest, getClientIp } from '@/lib/chatRateLimit';
 import type { ChatMessage, ChatSession } from '@/lib/types';
 
 const SAVE_LEAD_RE = /\[SAVE_LEAD\]([\s\S]*?)\[\/SAVE_LEAD\]/;
@@ -192,6 +193,18 @@ export async function POST(req: NextRequest) {
   if (!sessionId || !UUID_RE.test(sessionId)) {
     return NextResponse.json({ error: 'session_id tidak valid' }, { status: 400 });
   }
+
+  // Rate limit per IP — cek dulu sebelum apapun disentuh, termasuk sebelum
+  // create/lookup session, biar spam request tidak ikut bikin row session baru.
+  const clientIp = getClientIp(req);
+  const { limited, retryAfterSeconds } = await isChatRateLimited(clientIp);
+  if (limited) {
+    return NextResponse.json(
+      { error: 'Terlalu banyak permintaan. Coba lagi sebentar lagi.' },
+      { status: 429, headers: { 'Retry-After': String(retryAfterSeconds ?? 60) } }
+    );
+  }
+  await recordChatRequest(clientIp);
 
   const supabase = getSupabase();
   const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user');
