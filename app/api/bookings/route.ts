@@ -142,9 +142,27 @@ export async function PATCH(req: NextRequest) {
       );
     }
 
+    const update: Record<string, unknown> = { status };
+
+    if (status === 'confirmed') {
+      const { data: current } = await supabase
+        .from('bookings')
+        .select('queue_number')
+        .eq('id', id)
+        .single();
+
+      if (!current?.queue_number) {
+        const { data: seq, error: seqError } = await supabase.rpc('nextval_queue_number');
+        if (seqError) {
+          return NextResponse.json({ error: seqError.message }, { status: 400 });
+        }
+        update.queue_number = seq;
+      }
+    }
+
     const { data, error } = await supabase
       .from('bookings')
-      .update({ status })
+      .update(update)
       .eq('id', id)
       .select('*, customers(name, phone)')
       .single();

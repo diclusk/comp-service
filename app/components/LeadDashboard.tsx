@@ -83,6 +83,32 @@ export const LeadDashboard = () => {
     load();
   };
 
+  const printQueueTicket = (b: Booking) => {
+    const win = window.open('', '_blank', 'width=380,height=500');
+    if (!win) return;
+    const num = String(b.queue_number).padStart(4, '0');
+    win.document.write(`<!DOCTYPE html><html><head><title>Nomor Antrian #${num}</title>
+      <style>
+        @page { size: 80mm auto; margin: 0; }
+        body { font-family: monospace; text-align: center; padding: 16px; margin: 0; }
+        .brand { font-size: 12px; letter-spacing: 2px; color: #666; }
+        .num { font-size: 56px; font-weight: bold; margin: 12px 0; }
+        .meta { font-size: 13px; margin: 4px 0; }
+        hr { border: none; border-top: 1px dashed #999; margin: 12px 0; }
+      </style>
+      </head><body>
+        <div class="brand">FIXKOM_</div>
+        <div class="num">#${num}</div>
+        <hr />
+        <div class="meta">${b.customers?.name || '-'}</div>
+        <div class="meta">${b.service_type}</div>
+        <div class="meta">${formatDate(b.scheduled_date)}</div>
+      </body></html>`);
+    win.document.close();
+    win.focus();
+    win.print();
+  };
+
   const qualifiedCount = leads.filter((l) => l.qualified).length;
   const stats = [
     { label: 'Total Leads', value: leads.length, icon: UsersThree, color: 'text-teal-400' },
@@ -251,7 +277,7 @@ export const LeadDashboard = () => {
           <table className="w-full text-left text-sm">
             <thead>
               <tr className="bg-[#0f1826]">
-                {['Customer', 'Servis', 'Jadwal', 'Deskripsi', 'Foto', 'Status'].map((h) => (
+                {['Antrian', 'Customer', 'Servis', 'Jadwal', 'Deskripsi', 'Foto', 'Status'].map((h) => (
                   <th
                     key={h}
                     className="border-b border-white/6 px-4 py-3 text-[11px] font-semibold uppercase tracking-wide text-teal-400/80"
@@ -264,13 +290,31 @@ export const LeadDashboard = () => {
             <tbody>
               {bookings.length === 0 ? (
                 <tr>
-                  <td colSpan={6} data-testid="bookings-empty" className="px-4 py-12 text-center text-slate-500">
+                  <td colSpan={7} data-testid="bookings-empty" className="px-4 py-12 text-center text-slate-500">
                     Belum ada booking.
                   </td>
                 </tr>
               ) : (
                 bookings.map((b) => (
                   <tr key={b.id} data-testid={`booking-row-${b.id}`} className="transition hover:bg-white/3">
+                    <td className="border-b border-white/6 px-4 py-3">
+                      {b.queue_number ? (
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono text-sm font-semibold text-teal-300">
+                            #{String(b.queue_number).padStart(4, '0')}
+                          </span>
+                          <button
+                            data-testid={`print-queue-${b.id}`}
+                            onClick={() => printQueueTicket(b)}
+                            className="rounded-md border border-white/10 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-slate-300 transition hover:border-teal-400/40 hover:text-teal-300"
+                          >
+                            Cetak
+                          </button>
+                        </div>
+                      ) : (
+                        <span className="text-xs text-slate-600">—</span>
+                      )}
+                    </td>
                     <td className="border-b border-white/6 px-4 py-3">
                       <span className="font-medium text-white">{b.customers?.name || '—'}</span>
                       <span className="block text-xs text-slate-500">{b.customers?.phone}</span>

@@ -1,18 +1,5 @@
 import type { Service } from '@/lib/types';
 
-// Map slug servis (halaman /services) -> value dropdown "Jenis Servis" di
-// BookingForm.tsx, dipakai buat auto-select saat datang dari tombol
-// "Pesan servis ini". Value di sini harus persis sama dengan isi SERVICE_TYPES
-// di app/components/BookingForm.tsx.
-export const SERVICE_BOOKING_TYPE: Record<string, string> = {
-  'servis-hardware': 'Perbaikan Hardware',
-  'install-ulang': 'Instalasi Software',
-  'data-recovery': 'Lainnya',
-  upgrade: 'Upgrade Komponen',
-  cleaning: 'Cleaning & Maintenance',
-  'virus-optimasi': 'Cleaning & Maintenance',
-};
-
 export const services: Service[] = [
   {
     slug: 'servis-hardware',
@@ -75,3 +62,15 @@ export const services: Service[] = [
     points: ['Scan menyeluruh + pembersihan', 'Optimasi startup & storage', 'Edukasi terhadap keamanan & backup data agar hal yang sama tidak terulang lagi', 'Harga tergantung tingkat infeksi.'],
   },
 ];
+
+// Value dropdown "Jenis Servis" di BookingForm.tsx — diturunkan langsung dari
+// `services` di atas (nama service persis sama dgn halaman /services), jadi
+// booking & halaman layanan tidak akan desync lagi. "Lainnya" ditambah sbg
+// opsi generik di luar 6 servis ini.
+export const SERVICE_TYPES: string[] = [...services.map((s) => s.name), 'Lainnya'];
+
+// Map slug servis (halaman /services) -> value dropdown SERVICE_TYPES,
+// dipakai buat auto-select saat datang dari tombol "Pesan servis ini".
+export const SERVICE_BOOKING_TYPE: Record<string, string> = Object.fromEntries(
+  services.map((s) => [s.slug, s.name])
+);

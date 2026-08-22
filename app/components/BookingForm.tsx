@@ -6,17 +6,11 @@ import { BorderBeam } from '@/app/components/border-beam';
 import { getOrCreateGuestSessionId } from '@/lib/Guestsession';
 import { compressImage } from '@/lib/compressImage';
 import { getSupabaseBrowser } from '@/lib/supabase/client';
+import { SERVICE_TYPES } from '@/lib/services';
 
 const MAX_PHOTO_BYTES = 5 * 1024 * 1024; // 5MB, sebelum dikompres
 
 const DEVICE_TYPES = ['Laptop', 'PC / Desktop', 'Printer', 'Lainnya'];
-const SERVICE_TYPES = [
-  'Perbaikan Hardware',
-  'Instalasi Software',
-  'Upgrade Komponen',
-  'Cleaning & Maintenance',
-  'Lainnya',
-];
 
 const inputClass =
   'mt-1.5 w-full rounded-lg border border-white/10 bg-[#0f1826] px-3.5 py-2.5 text-sm text-white ' +

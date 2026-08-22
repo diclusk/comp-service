@@ -51,7 +51,10 @@ export default function RegisterPage() {
       const { data, error: signUpError } = await supabase.auth.signUp({
         email,
         password,
-        options: { captchaToken },
+        options: {
+          captchaToken,
+          emailRedirectTo: `${window.location.origin}/auth/callback?redirect=/verified`,
+        },
       });
 
       if (signUpError) {

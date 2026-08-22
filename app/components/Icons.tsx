@@ -202,6 +202,15 @@ export function IconFacebook({ className = 'h-4 w-4' }: IconProps) {
   );
 }
 
+export function IconTiktok({ className = 'h-4 w-4' }: IconProps) {
+  return (
+    <svg {...base} className={className}>
+      <path d="M16.5 2.5a4.5 4.5 0 0 1-4.5-4.5v14a4.5 4.5 0 1 1-4.5-4.5" />
+      <path d="M16.5 2.5a4.5 4.5 0 0 1-4.5-4.5v14a4.5 4.5 0 1 1-4.5-4.5" />
+    </svg>
+  );
+}
+
 export function IconInstagram({ className = 'h-4 w-4' }: IconProps) {
   return (
     <svg {...base} className={className}>

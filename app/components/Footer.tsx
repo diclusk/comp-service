@@ -7,10 +7,9 @@ import {
   IconPhone,
   IconMail,
   IconClock,
-  IconFacebook,
+  IconTiktok,
   IconInstagram,
   IconWhatsapp,
-  IconYoutube,
 } from './Icons';
 
 const NAV_LINKS = [
@@ -29,10 +28,9 @@ const SERVICE_LINKS = [
 ];
 
 const SOCIALS = [
-  { label: 'Facebook', icon: IconFacebook, href: '#' },
-  { label: 'Instagram', icon: IconInstagram, href: '#' },
-  { label: 'WhatsApp', icon: IconWhatsapp, href: '#' },
-  { label: 'YouTube', icon: IconYoutube, href: '#' },
+  { label: 'Tiktok', icon: IconTiktok, href: 'https://www.tiktok.com/@zenith.ops?_r=1&_t=ZS-993g1Ijx4Gg' },
+  { label: 'Instagram', icon: IconInstagram, href: 'https://www.instagram.com/hafizarsyd?igsi=OWphanBiOGUxNGhs' },
+  { label: 'WhatsApp', icon: IconWhatsapp, href: 'https://wa.me/qr/6IL2HONASOUDM1' },
 ];
 
 export default function Footer() {
@@ -44,7 +42,7 @@ export default function Footer() {
           <div className="lg:col-span-2">
             <Link href="/" className="flex items-center gap-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-navy-900 text-white">
-                <Image src="/favicon.svg" alt="Logo" width={60} height={60} />
+                <Image src="/favicon.png" alt="Logo" width={60} height={60} />
               </div>
               <div className="leading-tight">
                 <div className="flex items-baseline gap-1">

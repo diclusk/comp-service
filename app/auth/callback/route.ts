@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getSupabaseServer } from '@/lib/supabase/server';
 import { getSafeRedirect } from '@/lib/safeRedirect';
 
-// Dipanggil Supabase abis user selesai login di Google (redirectTo diarahkan kesini).
-// Supabase kirim ?code=... yang perlu ditukar jadi session (set cookie).
+// Dipanggil Supabase abis user klik link OAuth (Google) ATAU link verifikasi email
+// (signup/reset password) — keduanya sama-sama kirim ?code=... yang ditukar jadi session.
 export async function GET(req: NextRequest) {
   const { searchParams, origin } = new URL(req.url);
   const code = searchParams.get('code');
@@ -17,8 +17,8 @@ export async function GET(req: NextRequest) {
       return NextResponse.redirect(`${origin}${redirect}`);
     }
 
-    console.error('OAuth callback error:', error);
+    console.error('Auth callback error:', error);
   }
 
-  return NextResponse.redirect(`${origin}/login?error=oauth_failed`);
+  return NextResponse.redirect(`${origin}/login?error=auth_failed`);
 }

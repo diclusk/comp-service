@@ -109,6 +109,11 @@ export default function GuestBookingHistoryPage() {
 
               <div className="flex items-start justify-between gap-3">
                 <div>
+                  {b.queue_number && (
+                    <p className="font-mono text-xs font-semibold text-teal-300">
+                      Antrian #{String(b.queue_number).padStart(4, '0')}
+                    </p>
+                  )}
                   <p className="text-sm font-semibold text-navy-50">{b.service_type}</p>
                   <p className="mt-0.5 text-xs text-blue-200">Jadwal: {formatDate(b.scheduled_date)}</p>
                 </div>
